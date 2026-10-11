@@ -8,8 +8,6 @@
   <meta name="theme-color" content="#059669">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <!-- Netlify Identity Widget -->
-  <script type="text/javascript" src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -43,31 +41,6 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen pb-12 selection:bg-emerald-500 selection:text-white">
 
-  <!-- Lock Screen Overlay (Akses Terbatas Netlify Identity) -->
-  <div id="authLockScreen" class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl space-y-4">
-      <div class="w-16 h-16 bg-emerald-100 rounded-2xl mx-auto flex items-center justify-center shadow-inner">
-        <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-        </svg>
-      </div>
-      <div>
-        <h2 class="text-lg font-bold text-slate-800">Akses Terbatas</h2>
-        <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
-          Kalkulator perpajakan ini hanya dapat diakses oleh pengguna yang memiliki akun terdaftar dan undangan resmi.
-        </p>
-      </div>
-      <button type="button" onclick="handleLogin()"
-        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center space-x-2 transition shadow-lg shadow-emerald-600/30 active:scale-95">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
-        <span>Masuk / Login Akun</span>
-      </button>
-      <div class="pt-2 border-t border-slate-100 text-[11px] text-slate-400">
-        Belum memiliki akun? Hubungi Administrator untuk mendapatkan email undangan.
-      </div>
-    </div>
-  </div>
-
   <!-- Header App Bar -->
   <header class="bg-emerald-600 text-white sticky top-0 z-30 shadow-md">
     <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
@@ -81,13 +54,6 @@
         </div>
       </div>
       <div class="flex items-center space-x-2">
-        <!-- User Info & Logout Button -->
-        <div id="userProfileBar" class="hidden flex items-center space-x-1.5">
-          <span id="userEmailBadge" class="text-[10px] bg-emerald-700/90 text-emerald-100 font-medium px-2 py-1 rounded-lg truncate max-w-[110px]"></span>
-          <button type="button" onclick="handleLogout()" title="Keluar Akun" class="text-[10px] bg-emerald-800/90 hover:bg-emerald-900 text-white font-semibold px-2 py-1 rounded-lg transition">
-            Keluar
-          </button>
-        </div>
         <button id="btnInstall" class="hidden text-xs bg-white text-emerald-700 font-semibold px-2.5 py-1.5 rounded-full shadow hover:bg-emerald-50 transition">
           + Pasang App
         </button>
@@ -844,79 +810,8 @@ Dihitung otomatis via Kalkulator Pajak`;
       }
     }
 
-    // ==========================================
-    // Autentikasi Netlify Identity (Akses Terbatas)
-    // ==========================================
-    function initAuth() {
-      if (typeof netlifyIdentity === 'undefined') {
-        console.warn('Netlify Identity widget tidak ditemukan (mungkin mode offline).');
-        return;
-      }
-
-      // Event saat widget Identity diinisialisasi
-      netlifyIdentity.on('init', user => {
-        checkAuthState(user);
-      });
-
-      // Event saat user berhasil masuk
-      netlifyIdentity.on('login', user => {
-        checkAuthState(user);
-        netlifyIdentity.close();
-      });
-
-      // Event saat user keluar
-      netlifyIdentity.on('logout', () => {
-        checkAuthState(null);
-      });
-
-      netlifyIdentity.on('error', err => {
-        console.error('Netlify Identity Error:', err);
-      });
-
-      // Buka otomatis widget jika user membuka dari tautan email undangan (#invite_token dsb.)
-      if (window.location.hash && (window.location.hash.includes('_token=') || window.location.hash.includes('invite_token='))) {
-        netlifyIdentity.open();
-      }
-
-      // Periksa status login saat halaman pertama kali dimuat
-      const currentUser = netlifyIdentity.currentUser();
-      checkAuthState(currentUser);
-    }
-
-    function checkAuthState(user) {
-      const lockScreen = document.getElementById('authLockScreen');
-      const userProfile = document.getElementById('userProfileBar');
-      const userBadge = document.getElementById('userEmailBadge');
-
-      if (user) {
-        if (lockScreen) lockScreen.classList.add('hidden');
-        if (userProfile) userProfile.classList.remove('hidden');
-        if (userBadge) userBadge.innerText = user.email || 'Pengguna';
-      } else {
-        if (lockScreen) lockScreen.classList.remove('hidden');
-        if (userProfile) userProfile.classList.add('hidden');
-      }
-    }
-
-    function handleLogin() {
-      if (typeof netlifyIdentity !== 'undefined') {
-        netlifyIdentity.open('login');
-      } else {
-        alert('Fitur Netlify Identity belum aktif. Pastikan Netlify Identity sudah diaktifkan di dashboard Netlify.');
-      }
-    }
-
-    function handleLogout() {
-      if (typeof netlifyIdentity !== 'undefined') {
-        if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
-          netlifyIdentity.logout();
-        }
-      }
-    }
-
     // Inisialisasi saat halaman dibuka
     document.addEventListener('DOMContentLoaded', () => {
-      initAuth();
       calculate();
       renderRiwayat();
 
