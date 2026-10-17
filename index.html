@@ -1,90 +1,1837 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kalkulator Pajak - PPh & PPN (DPP Nilai Lain)</title>
+  <meta name="description" content="Aplikasi Kalkulator Pajak PPh 23, PPh 21, PPh 4 ayat 2, dan PPN DPP Nilai Lain (PMK 71/2022) dengan Gross-Up dan Include/Exclude PPN.">
+  <meta name="theme-color" content="#059669">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <!-- Netlify Identity Widget -->
+  <script type="text/javascript" src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2pdf for Client-Side PDF Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Mobile-first tweaks */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    .tap-highlight-transparent {
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #printableSlipModal, #printableSlipModal * {
+        visibility: visible !important;
+      }
+      #printableSlipModal {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 10px !important;
+        background: white !important;
+        color: black !important;
+        z-index: 99999 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen pb-12 selection:bg-emerald-500 selection:text-white">
 
-Akses Terbatas
-Kalkulator perpajakan ini hanya dapat diakses oleh pengguna yang memiliki akun terdaftar dan undangan resmi.
-Masuk / Login Akun
-Belum memiliki akun? Hubungi Administrator untuk mendapatkan email undangan.
-￼
-CalculaTAX
-Kalkulator Perpajakan
-Keluar
-+ Pasang App
-Kalkulator Pajak Kalender Pajak
-Pilih Jenis Pajak
-PPh 23 PPh 21 PPh 4(2) PPN
-Kategori Layanan
-          
+  <!-- Lock Screen Overlay (Akses Terbatas Netlify Identity) -->
+  <div id="authLockScreen" class="hidden fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl space-y-4">
+      <div class="w-16 h-16 bg-emerald-100 rounded-2xl mx-auto flex items-center justify-center shadow-inner">
+        <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-lg font-bold text-slate-800">Akses Terbatas</h2>
+        <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+          Kalkulator perpajakan ini hanya dapat diakses oleh pengguna yang memiliki akun terdaftar dan undangan resmi.
+        </p>
+      </div>
+      <div class="space-y-2">
+        <button type="button" onclick="handleLogin()"
+          class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center space-x-2 transition shadow-lg shadow-emerald-600/30 active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+          <span>Masuk / Login Akun (Netlify)</span>
+        </button>
+
+        <button type="button" onclick="bypassAuthMode()"
+          class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-4 rounded-xl text-xs transition active:scale-95 border border-slate-200 flex items-center justify-center space-x-1.5">
+          <span>🔓 Mode Uji Coba / Tamu (Tanpa Login)</span>
+        </button>
+      </div>
+      <div class="pt-2 border-t border-slate-100 text-[11px] text-slate-400">
+        Catatan: Tombol login Netlify hanya aktif di hosting live Netlify. Untuk mencoba di laptop, gunakan tombol Mode Uji Coba di atas.
+      </div>
+    </div>
+  </div>
+
+  <!-- Header App Bar -->
+  <header class="bg-emerald-600 text-white sticky top-0 z-30 shadow-md">
+    <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="bg-white p-1 rounded-xl shadow-sm flex items-center justify-center w-10 h-10 overflow-hidden">
+          <img src="logo.png" alt="Logo" class="w-8 h-8 object-contain">
+        </div>
+        <div>
+          <h1 class="text-base font-bold leading-tight">CalculaTAX</h1>
+          <p class="text-xs text-emerald-100">Kalkulator Perpajakan</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <!-- User Info & Logout Button -->
+        <div id="userProfileBar" class="hidden flex items-center space-x-1.5">
+          <span id="userEmailBadge" class="text-[10px] bg-emerald-700/90 text-emerald-100 font-medium px-2 py-1 rounded-lg truncate max-w-[110px]"></span>
+          <button type="button" onclick="handleLogout()" title="Keluar Akun" class="text-[10px] bg-emerald-800/90 hover:bg-emerald-900 text-white font-semibold px-2 py-1 rounded-lg transition">
+            Keluar
+          </button>
+        </div>
+        <button id="btnInstall" class="hidden text-xs bg-white text-emerald-700 font-semibold px-2.5 py-1.5 rounded-full shadow hover:bg-emerald-50 transition">
+          + Pasang App
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
+
+    <!-- Switcher Navigasi Utama: Kalkulator vs Kalender Pajak -->
+    <div class="grid grid-cols-2 bg-slate-200/90 p-1 rounded-2xl text-xs font-bold shadow-inner">
+      <button type="button" id="tabNavKalkulator" onclick="switchMainTab('kalkulator')"
+        class="py-2.5 rounded-xl bg-white text-emerald-700 shadow-sm transition-all flex items-center justify-center space-x-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        <span>Kalkulator Pajak</span>
+      </button>
+      <button type="button" id="tabNavKalender" onclick="switchMainTab('kalender')"
+        class="py-2.5 rounded-xl text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center space-x-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>Kalender Pajak</span>
+      </button>
+    </div>
+
+    <!-- SEKSI 1: KALKULATOR PAJAK -->
+    <div id="sectionKalkulator" class="space-y-4">
+
+      <!-- Card Input Form -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 space-y-4">
+
+      <!-- 1. Pilihan Jenis Pajak -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+          Pilih Jenis Pajak
+        </label>
+        <div class="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl">
+          <button type="button" onclick="setJenisPajak('pph23')" id="tab-pph23"
+            class="tax-tab py-2 text-[11px] font-semibold rounded-lg transition-all text-center bg-white text-emerald-700 shadow-sm">
+            PPh 23
+          </button>
+          <button type="button" onclick="setJenisPajak('pph21')" id="tab-pph21"
+            class="tax-tab py-2 text-[11px] font-semibold rounded-lg transition-all text-center text-slate-600 hover:text-slate-900">
+            PPh 21
+          </button>
+          <button type="button" onclick="setJenisPajak('pph4_2')" id="tab-pph4_2"
+            class="tax-tab py-2 text-[11px] font-semibold rounded-lg transition-all text-center text-slate-600 hover:text-slate-900">
+            PPh 4(2)
+          </button>
+          <button type="button" onclick="setJenisPajak('ppn')" id="tab-ppn"
+            class="tax-tab py-2 text-[11px] font-semibold rounded-lg transition-all text-center text-slate-600 hover:text-slate-900">
+            PPN
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-Pilihan Khusus (Dinamis) -->
+      <div id="subPilihanContainer" class="hidden">
+        <label id="subPilihanLabel" class="block text-xs font-semibold text-slate-600 mb-1">
+          Kategori Layanan
+        </label>
+        <select id="subKategoriSelect" onchange="handleSubKategoriChange()"
+          class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+          <!-- Opsi diisi via JavaScript -->
+        </select>
+
+        <!-- Input Persentase DPP Kustom (Khusus DPP Nilai Lain Kustom) -->
+        <div id="customDppContainer" class="hidden mt-2 p-2.5 bg-emerald-50/50 rounded-xl border border-emerald-100">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-700">
+              Persentase DPP Nilai Lain:
+            </label>
+            <div class="flex items-center space-x-1.5">
+              <input type="number" id="inputCustomDpp" value="10" min="0.1" max="100" step="0.1"
+                class="w-20 px-2 py-1 text-xs text-right font-bold bg-white border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                oninput="calculate()">
+              <span class="text-xs font-bold text-slate-600">%</span>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-500 mt-1">
+            Contoh: 10% untuk Freight Forwarding/Ekspedisi, 20% jasa titip khusus, dsb.
+          </p>
+        </div>
+      </div>
+
+      <!-- 2. Input Nominal Transaksi -->
+      <div>
+        <div class="flex justify-between items-center mb-1">
+          <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Nilai Transaksi (Rp)
+          </label>
+          <span id="labelModeNominal" class="text-[11px] text-emerald-600 font-medium">
+            Nilai Kontrak / Bruto
+          </span>
+        </div>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-semibold text-sm">
+            Rp
+          </span>
+          <input type="text" id="inputNominal" inputmode="numeric" placeholder="0"
+            class="w-full pl-10 pr-3 py-3 text-lg font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            oninput="handleNominalInput(this)">
+        </div>
+
+        <!-- Quick Add Buttons -->
+        <div class="flex space-x-1.5 mt-2">
+          <button type="button" onclick="quickAdd(1000000)" class="text-[11px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded-lg transition">+1 Jt</button>
+          <button type="button" onclick="quickAdd(5000000)" class="text-[11px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded-lg transition">+5 Jt</button>
+          <button type="button" onclick="quickAdd(10000000)" class="text-[11px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded-lg transition">+10 Jt</button>
+          <button type="button" onclick="quickClear()" class="text-[11px] font-medium text-red-500 hover:bg-red-50 px-2 py-1 rounded-lg ml-auto transition">Reset</button>
+        </div>
+      </div>
+
+      <!-- 3A. Toggle Switch PPh (NPWP & Gross Up) -->
+      <div id="pphOptionsContainer" class="pt-2 border-t border-slate-100 space-y-3">
+
+        <!-- Switch NPWP -->
+        <label class="flex items-center justify-between cursor-pointer tap-highlight-transparent">
+          <div>
+            <div class="text-xs font-semibold text-slate-800">Memiliki NPWP / NIK Valid?</div>
+            <div id="hintNpwp" class="text-[11px] text-slate-400">Tarif standar PPh 23 (2%)</div>
+          </div>
+          <div class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="switchNpwp" checked onchange="handleNpwpToggle()" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+          </div>
+        </label>
+
+        <!-- Switch Gross-Up -->
+        <label class="flex items-center justify-between cursor-pointer tap-highlight-transparent">
+          <div>
+            <div class="text-xs font-semibold text-slate-800">Skema Gross-Up (Pajak Ditanggung)?</div>
+            <div class="text-[11px] text-slate-400">Vendor terima utuh sesuai nilai input</div>
+          </div>
+          <div class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="switchGrossUp" onchange="calculate()" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+          </div>
+        </label>
+
+      </div>
+
+      <!-- 3B. Opsi Khusus PPN (Tarif Standar & Include/Exclude PPN) -->
+      <div id="ppnOptionsContainer" class="pt-2 border-t border-slate-100 space-y-3 hidden">
+
+        <!-- Pilihan Tarif PPN -->
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <span class="text-xs font-semibold text-slate-800">Tarif Pokok PPN</span>
+            <span class="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-full">UU PPN / UU HPP</span>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl">
+            <button type="button" id="btnPpnRate11" onclick="setPpnRate(0.11)"
+              class="py-1.5 text-xs font-bold rounded-lg bg-white text-blue-700 shadow-sm transition">
+              11% (Berlaku)
+            </button>
+            <button type="button" id="btnPpnRate12" onclick="setPpnRate(0.12)"
+              class="py-1.5 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 transition">
+              12% (UU HPP)
+            </button>
+          </div>
+        </div>
+
+        <!-- Switch Include / Exclude PPN -->
+        <label class="flex items-center justify-between cursor-pointer tap-highlight-transparent">
+          <div>
+            <div class="text-xs font-semibold text-slate-800">Harga Termasuk PPN (Include)?</div>
+            <div id="hintIncludePpn" class="text-[11px] text-slate-400">Off: Exclude (harga belum PPN)</div>
+          </div>
+          <div class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="switchIncludePpn" onchange="handleIncludePpnToggle()" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+          </div>
+        </label>
+
+        <!-- Info Faktur Pajak Kode 04 -->
+        <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-2.5 flex items-start space-x-2 text-indigo-900">
+          <svg class="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <p class="text-[11px] leading-relaxed">
+            <strong class="font-semibold text-indigo-800">Panduan e-Faktur:</strong> Gunakan Kode Transaksi <strong>04</strong> untuk faktur DPP Nilai Lain. Nilai DPP diisi nilai penyesuaian (bukan nilai penuh).
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Card Output Hasil Perhitungan -->
+    <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-5 shadow-lg space-y-4">
+      
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+        <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Hasil Perhitungan</span>
+        <span id="badgeSkema" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+          Non Gross-Up (Potong Vendor)
+        </span>
+      </div>
+
+      <!-- Kas Ditransfer ke Vendor / Total Tagihan (Highlight Utama) -->
+      <div class="bg-slate-800/80 rounded-xl p-3.5 border border-slate-700">
+        <div id="lblMainResult" class="text-xs text-slate-400 font-medium">Kas Ditransfer ke Rekening Vendor</div>
+        <div id="resNetVendor" class="text-2xl font-black text-emerald-400 mt-0.5">Rp 0</div>
+      </div>
+
+      <!-- Rincian Pajak & Beban -->
+      <div class="grid grid-cols-2 gap-2 text-xs">
         
-Persentase DPP Nilai Lain:
-%
-Contoh: 10% untuk Freight Forwarding/Ekspedisi, 20% jasa titip khusus, dsb.
-Nilai Transaksi (Rp) Nilai Kontrak / Bruto
-Rp
-+1 Jt +5 Jt +10 Jt Reset
-Memiliki NPWP / NIK Valid?
-Tarif standar PPh 23 (2%)
+        <div class="bg-slate-800/50 p-3 rounded-xl border border-slate-700/60">
+          <div id="lblTaxResult" class="text-slate-400 font-medium">Potongan PPh Terutang</div>
+          <div id="resPph" class="text-base font-bold text-amber-400 mt-0.5">Rp 0</div>
+          <div id="resTarifEfektif" class="text-[10px] text-slate-400 mt-0.5">Tarif Efektif: 2%</div>
+        </div>
 
-Skema Gross-Up (Pajak Ditanggung)?
-Vendor terima utuh sesuai nilai input
+        <div class="bg-slate-800/50 p-3 rounded-xl border border-slate-700/60">
+          <div id="lblBebanResult" class="text-slate-400 font-medium">Total Beban Perusahaan</div>
+          <div id="resBebanTotal" class="text-base font-bold text-blue-300 mt-0.5">Rp 0</div>
+          <div id="resKetBeban" class="text-[10px] text-slate-400 mt-0.5">Vendor + Pajak</div>
+        </div>
 
-Tarif Pokok PPN UU PPN / UU HPP
-11% (Berlaku) 12% (UU HPP)
-Harga Termasuk PPN (Include)?
-Off: Exclude (harga belum PPN)
+      </div>
 
-Panduan e-Faktur: Gunakan Kode Transaksi 04 untuk faktur DPP Nilai Lain. Nilai DPP diisi nilai penyesuaian (bukan nilai penuh).
-Hasil Perhitungan Non Gross-Up (Potong Vendor)
-Kas Ditransfer ke Rekening Vendor
-Rp 0
-Potongan PPh Terutang
-Rp 0
-Tarif Efektif: 2%
-Total Beban Perusahaan
-Rp 0
-Vendor + Pajak
-Nilai Bruto Tagihan/SPT: Rp 0
-Dasar Pengenaan Pajak (DPP): Rp 0
-Kode e-Faktur: 040 (DPP Nilai Lain)
-Salin Teks Cetak PDF Simpan
-Riwayat Perhitungan
-Hapus Semua
-Belum ada riwayat perhitungan tersimpan.
-⏳
-Jatuh Tempo Terdekat Memuat...
-Batas Pembayaran Pajak
-Jatuh tempo: -
-Oktober 2026
-Kalender Batas Waktu DJP
-Setor PPh Lapor SPT PPN
+      <!-- Detail Bruto SPT & DPP -->
+      <div class="text-xs bg-slate-950/40 rounded-xl p-3 space-y-1.5 text-slate-300 border border-slate-800">
+        <div class="flex justify-between">
+          <span id="lblBrutoResult" class="text-slate-400">Nilai Bruto Tagihan/SPT:</span>
+          <span id="resBrutoFinal" class="font-semibold text-white">Rp 0</span>
+        </div>
+        <div class="flex justify-between">
+          <span id="lblDppResult" class="text-slate-400">Dasar Pengenaan Pajak (DPP):</span>
+          <span id="resDpp" class="font-semibold text-white">Rp 0</span>
+        </div>
+        <div id="rowKodeFaktur" class="flex justify-between hidden pt-1.5 border-t border-slate-800">
+          <span class="text-slate-400">Kode e-Faktur:</span>
+          <span id="resKodeFaktur" class="font-semibold text-indigo-300">040 (DPP Nilai Lain)</span>
+        </div>
+      </div>
 
-Tanggal 10 Setor PPh
-Keterangan kewajiban perpajakan...
-Agenda Pajak Bulan Ini Resmi DJP
+      <!-- Tombol Aksi: Salin, Cetak PDF & Simpan Riwayat -->
+      <div class="pt-1 grid grid-cols-3 gap-2">
+        <button type="button" onclick="salinRingkasan()"
+          class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-1.5 rounded-xl text-xs flex items-center justify-center space-x-1 transition active:scale-95 shadow truncate">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          <span id="btnCopyText" class="truncate">Salin Teks</span>
+        </button>
 
-📲 Pasang Alarm ke Kalender HP
-Sinkronkan jadwal setor & lapor pajak otomatis ke Google Calendar atau Apple Calendar di HP Anda lengkap dengan alarm pengingat H-3 dan H-1.
-Unduh File .ICS Google Calendar
-Ingatkan via Email Terdaftar (H-3)
+        <button type="button" onclick="bukaModalSlipAktif()"
+          class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-1.5 rounded-xl text-xs flex items-center justify-center space-x-1 transition active:scale-95 shadow truncate">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          <span class="truncate">Cetak PDF</span>
+        </button>
 
-📄
-Slip Memo Perhitungan Pajak
-CTX
-CalculaTAX
-Kalkulator Perpajakan Resmi
-CTX-202610-001
-17/10/2026 13:25 WIB
-SLIP MEMO PERHITUNGAN PPh PASAL 23
-Jasa Badan / Umum • Non Gross-Up
-Jenis Pajak: PPh 23
-Skema Transaksi: Non Gross-Up (Potong Vendor)
-Tarif Efektif: 2,00%
-Status NPWP: Ber-NPWP (Tarif Normal)
-Keterangan Komponen Jumlah (IDR)
-Nilai Kontrak / Input: Rp 0,00
-Dasar Pengenaan Pajak (DPP): Rp 0,00
-Potongan PPh: Rp 0,00
-Kas Ditransfer ke Vendor: Rp 0,00
-Total Beban Perusahaan: Rp 0,00
-💡 Petunjuk Administrasi & Pembayaran:
-Setorkan potongan pajak ke kas negara menggunakan kode billing dan laporkan pada SPT Masa terkait sebelum batas waktu.
-Dihitung via CalculaTAX PWA Dokumen Memo Otomatis
-Unduh PDF WhatsApp Tutup
+        <button type="button" onclick="simpanRiwayat()"
+          class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2.5 px-1.5 rounded-xl text-xs flex items-center justify-center space-x-1 transition active:scale-95 truncate">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span class="truncate">Simpan</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Riwayat Perhitungan Terakhir -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center space-x-1">
+          <span>Riwayat Perhitungan</span>
+        </h2>
+        <button type="button" onclick="hapusRiwayat()" class="text-[11px] text-red-500 hover:underline">
+          Hapus Semua
+        </button>
+      </div>
+
+      <div id="listRiwayat" class="space-y-2 text-xs">
+        <div class="text-slate-400 text-center py-4 text-xs italic">
+          Belum ada riwayat perhitungan tersimpan.
+        </div>
+      </div>
+    </div>
+
+    </div>
+    <!-- /SEKSI 1: KALKULATOR PAJAK -->
+
+    <!-- SEKSI 2: KALENDER PAJAK & REMINDER -->
+    <div id="sectionKalender" class="hidden space-y-4">
+      
+      <!-- Card Countdown Peringatan Terdekat -->
+      <div id="cardCountdownPajak" class="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 border border-amber-500/30 rounded-2xl p-4 shadow-sm flex items-start space-x-3.5">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0 text-xl font-bold shadow-inner">
+          ⏳
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-amber-700 tracking-wider uppercase">Jatuh Tempo Terdekat</span>
+            <span id="badgeCountdownHari" class="text-xs font-black px-2 py-0.5 bg-amber-500 text-white rounded-lg shadow-sm">
+              Memuat...
+            </span>
+          </div>
+          <h3 id="txtJudulDeadline" class="text-sm font-bold text-slate-800 mt-1 leading-snug">
+            Batas Pembayaran Pajak
+          </h3>
+          <p id="txtTglDeadline" class="text-xs text-slate-600 mt-0.5 font-medium">
+            Jatuh tempo: -
+          </p>
+        </div>
+      </div>
+
+      <!-- Kalender Bulan Berjalan -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 space-y-3">
+        <!-- Month Header & Nav -->
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <button type="button" onclick="gantiBulanKalender(-1)" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <div class="text-center">
+            <h2 id="judulBulanTahunKalender" class="text-sm font-bold text-slate-800">Oktober 2026</h2>
+            <p class="text-[10px] text-slate-400">Kalender Batas Waktu DJP</p>
+          </div>
+          <button type="button" onclick="gantiBulanKalender(1)" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- Legenda Warna -->
+        <div class="flex items-center justify-between text-[11px] px-1 text-slate-500">
+          <span class="flex items-center space-x-1">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+            <span>Setor PPh</span>
+          </span>
+          <span class="flex items-center space-x-1">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
+            <span>Lapor SPT</span>
+          </span>
+          <span class="flex items-center space-x-1">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+            <span>PPN</span>
+          </span>
+        </div>
+
+        <!-- Grid Kalender (Sen - Min) -->
+        <div id="gridKalenderBulan" class="grid grid-cols-7 gap-1 text-center text-xs">
+          <!-- Diisi otomatis via JavaScript -->
+        </div>
+
+        <!-- Box Keterangan Tanggal Terpilih -->
+        <div id="boxDetailTanggal" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+          <div class="flex items-center justify-between">
+            <span id="detTglJudul" class="font-bold text-slate-800 text-xs">Tanggal 10</span>
+            <span id="detTglBadge" class="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-100 text-amber-800">Setor PPh</span>
+          </div>
+          <p id="detTglDeskripsi" class="text-xs text-slate-600">Keterangan kewajiban perpajakan...</p>
+        </div>
+      </div>
+
+      <!-- Agenda Batas Waktu Pajak Bulan Ini -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center justify-between">
+          <span>Agenda Pajak Bulan Ini</span>
+          <span class="text-[10px] text-emerald-600 font-semibold">Resmi DJP</span>
+        </h3>
+
+        <div id="listAgendaPajak" class="space-y-2.5 text-xs">
+          <!-- Di-render via JavaScript -->
+        </div>
+      </div>
+
+      <!-- Tombol Aksi Pengingat Kalender HP -->
+      <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-4 shadow-lg space-y-3">
+        <div>
+          <h3 class="font-bold text-sm">📲 Pasang Alarm ke Kalender HP</h3>
+          <p class="text-xs text-emerald-100 mt-0.5 leading-relaxed">
+            Sinkronkan jadwal setor & lapor pajak otomatis ke <strong>Google Calendar</strong> atau <strong>Apple Calendar</strong> di HP Anda lengkap dengan alarm pengingat H-3 dan H-1.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button type="button" onclick="unduhSemuaPengingatKalenderIcs()"
+            class="bg-white text-emerald-800 hover:bg-emerald-50 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+            <svg class="w-4 h-4 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span>Unduh File .ICS</span>
+          </button>
+
+          <button type="button" onclick="bukaGoogleCalendarBulanIni()"
+            class="bg-emerald-800/80 hover:bg-emerald-900 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow border border-emerald-500/40">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            <span>Google Calendar</span>
+          </button>
+        </div>
+
+        <!-- Toggle Email Reminder -->
+        <div class="pt-2 border-t border-emerald-500/40 flex items-center justify-between text-xs text-emerald-100">
+          <div class="flex items-center space-x-1.5">
+            <svg class="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            <span>Ingatkan via Email Terdaftar (H-3)</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="switchEmailReminder" onchange="toggleEmailReminder(this)" class="sr-only peer" checked>
+            <div class="w-9 h-5 bg-emerald-900/60 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-white peer-checked:after:bg-emerald-600"></div>
+          </label>
+        </div>
+      </div>
+
+    </div>
+    <!-- /SEKSI 2: KALENDER PAJAK -->
+
+  </main>
+
+  <!-- Modal Slip Memo Perhitungan Pajak (Print & Share) -->
+  <div id="modalSlipPdf" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-3 hidden">
+    <div id="printableSlipModal" class="bg-white rounded-3xl max-w-md w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn">
+      
+      <!-- Modal Header (Non-print) -->
+      <div class="no-print bg-slate-900 text-white px-4 py-3 flex items-center justify-between border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+          <span class="text-base">📄</span>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">Slip Memo Perhitungan Pajak</h3>
+        </div>
+        <button type="button" onclick="tutupModalSlip()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Printable Slip Content Container -->
+      <div class="p-4 overflow-y-auto flex-1 bg-slate-100" id="slipScrollArea">
+        <div id="printableSlipContent" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-slate-800">
+          
+          <!-- Slip Header -->
+          <div class="flex items-start justify-between border-b-2 border-emerald-600 pb-3">
+            <div class="flex items-center space-x-2">
+              <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow">
+                CTX
+              </div>
+              <div>
+                <h2 class="font-extrabold text-sm text-slate-900 leading-tight">CalculaTAX</h2>
+                <p class="text-[10px] text-slate-500 font-medium">Kalkulator Perpajakan Resmi</p>
+              </div>
+            </div>
+            <div class="text-right text-[10px] text-slate-500">
+              <div id="slipRefNumber" class="font-mono font-bold text-slate-800">CTX-202610-001</div>
+              <div id="slipDateTime">17/10/2026 13:25 WIB</div>
+            </div>
+          </div>
+
+          <!-- Slip Title Banner -->
+          <div class="bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-center">
+            <h4 id="slipTaxCategoryTitle" class="text-xs font-bold uppercase tracking-wider text-slate-800">
+              SLIP MEMO PERHITUNGAN PPh PASAL 23
+            </h4>
+            <p id="slipSubInfo" class="text-[10px] text-slate-500">Jasa Badan / Umum • Non Gross-Up</p>
+          </div>
+
+          <!-- Informasi Transaksi -->
+          <div class="text-xs space-y-1.5 bg-slate-50/60 p-3 rounded-xl border border-slate-100">
+            <div class="flex justify-between">
+              <span class="text-slate-500">Jenis Pajak:</span>
+              <span id="slipJenisPajak" class="font-semibold text-slate-800">PPh 23</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Skema Transaksi:</span>
+              <span id="slipSkema" class="font-semibold text-slate-800">Non Gross-Up (Potong Vendor)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Tarif Efektif:</span>
+              <span id="slipTarif" class="font-semibold text-slate-800">2,00%</span>
+            </div>
+            <div id="slipRowNpwpFaktur" class="flex justify-between">
+              <span class="text-slate-500" id="slipLblNpwpFaktur">Status NPWP:</span>
+              <span id="slipNpwpFaktur" class="font-semibold text-slate-800">Ber-NPWP (Tarif Normal)</span>
+            </div>
+          </div>
+
+          <!-- Tabel Rincian Nilai -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden text-xs">
+            <div class="bg-slate-100 font-semibold px-3 py-2 text-slate-700 flex justify-between border-b border-slate-200">
+              <span>Keterangan Komponen</span>
+              <span>Jumlah (IDR)</span>
+            </div>
+            <div class="p-3 space-y-2">
+              <div class="flex justify-between">
+                <span class="text-slate-600" id="slipLblKontrak">Nilai Kontrak / Input:</span>
+                <span id="slipValKontrak" class="font-medium text-slate-900">Rp 0,00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">Dasar Pengenaan Pajak (DPP):</span>
+                <span id="slipValDpp" class="font-medium text-slate-900">Rp 0,00</span>
+              </div>
+              <div class="flex justify-between text-amber-700 font-semibold">
+                <span id="slipLblPajak">Potongan PPh:</span>
+                <span id="slipValPajak">Rp 0,00</span>
+              </div>
+              <div class="pt-2 border-t border-slate-200 flex justify-between font-extrabold text-sm text-emerald-700">
+                <span id="slipLblUtama">Kas Ditransfer ke Vendor:</span>
+                <span id="slipValUtama">Rp 0,00</span>
+              </div>
+              <div class="flex justify-between text-slate-500 text-[11px] pt-1">
+                <span>Total Beban Perusahaan:</span>
+                <span id="slipValBeban" class="font-semibold text-slate-700">Rp 0,00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Petunjuk & Catatan Perpajakan -->
+          <div class="p-3 bg-emerald-50/60 rounded-xl border border-emerald-100 text-[11px] text-emerald-950 space-y-1">
+            <div class="font-bold text-emerald-800 flex items-center space-x-1">
+              <span>💡</span>
+              <span>Petunjuk Administrasi & Pembayaran:</span>
+            </div>
+            <p id="slipCatatan" class="leading-relaxed text-slate-700">
+              Setorkan potongan pajak ke kas negara menggunakan kode billing dan laporkan pada SPT Masa terkait sebelum batas waktu.
+            </p>
+          </div>
+
+          <!-- Slip Footer -->
+          <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[9px] text-slate-400">
+            <span>Dihitung via CalculaTAX PWA</span>
+            <span>Dokumen Memo Otomatis</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Action Buttons Modal (Non-print) -->
+      <div class="no-print bg-white p-3 border-t border-slate-200 grid grid-cols-3 gap-2">
+        <button type="button" onclick="unduhSlipPdf()"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-2 rounded-xl text-xs flex items-center justify-center space-x-1 shadow active:scale-95 transition truncate">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span class="truncate">Unduh PDF</span>
+        </button>
+
+        <button type="button" onclick="bagikanSlipWhatsApp()"
+          class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-2 rounded-xl text-xs flex items-center justify-center space-x-1 shadow active:scale-95 transition truncate">
+          <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          <span class="truncate">WhatsApp</span>
+        </button>
+
+        <button type="button" onclick="tutupModalSlip()"
+          class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2.5 px-2 rounded-xl text-xs transition truncate">
+          Tutup
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // State Aplikasi
+    let currentJenisPajak = 'pph23';
+    let rawNominal = 0;
+    let ppnRate = 0.11; // 11% (default) or 12%
+
+    // Sub-kategori konfigurasi
+    const subCategories = {
+      pph21: [
+        { id: 'lap1', label: 'Bukan Pegawai / Tenaga Ahli (DPP 50% × Tarif 5%)', tarif: 0.05, dppRatio: 0.5 },
+        { id: 'lap2', label: 'Penghasilan Kumulatif Tinggi (DPP 50% × Tarif 15%)', tarif: 0.15, dppRatio: 0.5 },
+        { id: 'lap3', label: 'Penghasilan Kumulatif Tinggi (DPP 50% × Tarif 25%)', tarif: 0.25, dppRatio: 0.5 }
+      ],
+      pph4_2: [
+        { id: 'konstr_kecil', label: 'Konstruksi - Kualifikasi Usaha Kecil (1,75%)', tarif: 0.0175, dppRatio: 1.0 },
+        { id: 'konstr_menengah', label: 'Konstruksi - Kualifikasi Menengah / Besar (2,65%)', tarif: 0.0265, dppRatio: 1.0 },
+        { id: 'konstr_none', label: 'Konstruksi - Tanpa Kualifikasi Usaha (4%)', tarif: 0.04, dppRatio: 1.0 },
+        { id: 'konsul_kual', label: 'Konsultansi Konstruksi - Berbadan Usaha (3,5%)', tarif: 0.035, dppRatio: 1.0 },
+        { id: 'konsul_none', label: 'Konsultansi Konstruksi - Tanpa Kualifikasi (6%)', tarif: 0.06, dppRatio: 1.0 },
+        { id: 'sewa_tanah', label: 'Sewa Tanah dan/atau Bangunan (10%)', tarif: 0.10, dppRatio: 1.0 }
+      ],
+      ppn: [
+        { id: 'ppn_11_12', label: 'DPP Nilai Lain (11/12) • Tarif 12% Menghasilkan PPN 11%', dppRatio: 11 / 12, forcedRate: 0.12, dasarHukum: 'Formula Penyesuaian (11/12)', kodeFaktur: '040' },
+        { id: 'ppn_perkebunan', label: 'Hasil Perkebunan Tertentu (TBS Sawit, Karet, dll.) [PMK 64/2022] (1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 64/PMK.03/2022', kodeFaktur: '050' },
+        { id: 'ppn_angkut_kebun', label: 'Jasa Angkut Hasil Kebun / Truk Sawit [PMK 71/2022] (DPP 10% → 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040' },
+        { id: 'ppn_ekspedisi', label: 'Jasa Pengiriman Paket / Ekspedisi (DPP 10% → Efektif 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040' },
+        { id: 'ppn_travel', label: 'Biro Perjalanan Wisata / Agen Tur (DPP 10% → Efektif 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040' },
+        { id: 'ppn_freight', label: 'Jasa Pengurusan Transportasi / Freight Forwarding (DPP 10% → Efektif 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040' },
+        { id: 'ppn_mobil_bekas', label: 'Penjualan Kendaraan Bermotor Bekas (DPP 10% → Efektif 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 65/PMK.03/2022', kodeFaktur: '040' },
+        { id: 'ppn_emas_pabrik', label: 'Penjualan Emas Perhiasan - Pabrikan (DPP 10% → Efektif 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 48/2023', kodeFaktur: '040' },
+        { id: 'ppn_emas_pedagang', label: 'Penjualan Emas Perhiasan - Pedagang (DPP 15% → Efektif 1,65%)', dppRatio: 0.15, dasarHukum: 'PMK 48/2023', kodeFaktur: '040' },
+        { id: 'ppn_cuma_cuma', label: 'Pemakaian Sendiri / Pemberian Cuma-cuma (DPP = HPP/Biaya Pokok)', dppRatio: 1.0, dasarHukum: 'PMK 121/PMK.03/2015', kodeFaktur: '040' },
+        { id: 'ppn_antar_cabang', label: 'Penyerahan Antar Cabang / Pusat-Cabang (DPP = Harga Pokok)', dppRatio: 1.0, dasarHukum: 'PMK 121/PMK.03/2015', kodeFaktur: '040' },
+        { id: 'ppn_custom', label: 'DPP Nilai Lain Kustom (Tentukan Sendiri %)', dppRatio: null, dasarHukum: 'DPP Nilai Lain Tertentu', kodeFaktur: '040' },
+        { id: 'ppn_standar', label: 'PPN Standar / Non-Nilai Lain (DPP Penuh 100%)', dppRatio: 1.0, dasarHukum: 'UU PPN / UU HPP', kodeFaktur: '010' }
+      ]
+    };
+
+    function setJenisPajak(jenis) {
+      currentJenisPajak = jenis;
+
+      // Update Tab Styles
+      ['pph23', 'pph21', 'pph4_2', 'ppn'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if (!el) return;
+        if (t === jenis) {
+          el.className = 'tax-tab py-2 text-[11px] font-semibold rounded-lg transition-all text-center bg-white text-emerald-700 shadow-sm';
+        } else {
+          el.className = 'tax-tab py-2 text-[11px] font-semibold rounded-lg transition-all text-center text-slate-600 hover:text-slate-900';
+        }
+      });
+
+      // Atur Tampilan Kontainer Form
+      const subContainer = document.getElementById('subPilihanContainer');
+      const subSelect = document.getElementById('subKategoriSelect');
+      const pphOpts = document.getElementById('pphOptionsContainer');
+      const ppnOpts = document.getElementById('ppnOptionsContainer');
+      const customDpp = document.getElementById('customDppContainer');
+      const rowKodeFaktur = document.getElementById('rowKodeFaktur');
+
+      if (jenis === 'ppn') {
+        pphOpts.classList.add('hidden');
+        ppnOpts.classList.remove('hidden');
+        subContainer.classList.remove('hidden');
+        rowKodeFaktur.classList.remove('hidden');
+        document.getElementById('subPilihanLabel').innerText = 'Kategori DPP Nilai Lain / Besaran Tertentu';
+        subSelect.innerHTML = subCategories.ppn.map(opt => `<option value="${opt.id}">${opt.label}</option>`).join('');
+        customDpp.classList.add('hidden');
+      } else {
+        pphOpts.classList.remove('hidden');
+        ppnOpts.classList.add('hidden');
+        customDpp.classList.add('hidden');
+        rowKodeFaktur.classList.add('hidden');
+
+        if (jenis === 'pph23') {
+          subContainer.classList.add('hidden');
+          document.getElementById('hintNpwp').innerText = 'Tarif standar PPh 23 (2%) vs Non-NPWP (4%)';
+        } else if (jenis === 'pph21') {
+          subContainer.classList.remove('hidden');
+          document.getElementById('subPilihanLabel').innerText = 'Lapisan Tarif PPh 21 (UU HPP)';
+          subSelect.innerHTML = subCategories.pph21.map(opt => `<option value="${opt.id}">${opt.label}</option>`).join('');
+          document.getElementById('hintNpwp').innerText = 'Bukan Pegawai / Tenaga Ahli';
+        } else if (jenis === 'pph4_2') {
+          subContainer.classList.remove('hidden');
+          document.getElementById('subPilihanLabel').innerText = 'Kategori Jasa PPh Final Ps 4(2)';
+          subSelect.innerHTML = subCategories.pph4_2.map(opt => `<option value="${opt.id}">${opt.label}</option>`).join('');
+          document.getElementById('hintNpwp').innerText = 'PPh Final (Tarif tetap berlaku)';
+        }
+      }
+
+      calculate();
+    }
+
+    function handleSubKategoriChange() {
+      const val = document.getElementById('subKategoriSelect').value;
+      const customContainer = document.getElementById('customDppContainer');
+      if (currentJenisPajak === 'ppn' && val === 'ppn_custom') {
+        customContainer.classList.remove('hidden');
+      } else {
+        customContainer.classList.add('hidden');
+      }
+      calculate();
+    }
+
+    function setPpnRate(rate) {
+      ppnRate = rate;
+      const btn11 = document.getElementById('btnPpnRate11');
+      const btn12 = document.getElementById('btnPpnRate12');
+      if (rate === 0.11) {
+        btn11.className = 'py-1.5 text-xs font-bold rounded-lg bg-white text-blue-700 shadow-sm transition';
+        btn12.className = 'py-1.5 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 transition';
+      } else {
+        btn12.className = 'py-1.5 text-xs font-bold rounded-lg bg-white text-blue-700 shadow-sm transition';
+        btn11.className = 'py-1.5 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 transition';
+      }
+      calculate();
+    }
+
+    function handleIncludePpnToggle() {
+      const isInc = document.getElementById('switchIncludePpn').checked;
+      document.getElementById('hintIncludePpn').innerText = isInc ? 'On: Include (harga sudah termasuk PPN)' : 'Off: Exclude (harga belum PPN)';
+      calculate();
+    }
+
+    function handleNpwpToggle() {
+      calculate();
+    }
+
+    function handleNominalInput(input) {
+      let value = input.value.replace(/[^0-9]/g, '');
+      rawNominal = value ? parseInt(value, 10) : 0;
+      input.value = rawNominal ? formatRupiahRaw(rawNominal) : '';
+      calculate();
+    }
+
+    function quickAdd(val) {
+      rawNominal += val;
+      document.getElementById('inputNominal').value = formatRupiahRaw(rawNominal);
+      calculate();
+    }
+
+    function quickClear() {
+      rawNominal = 0;
+      document.getElementById('inputNominal').value = '';
+      calculate();
+    }
+
+    function formatRupiah(num, decimals = 2) {
+      return 'Rp ' + Number(num || 0).toLocaleString('id-ID', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+
+    function formatRupiahRaw(num) {
+      return num.toLocaleString('id-ID');
+    }
+
+    function calculate() {
+      const badge = document.getElementById('badgeSkema');
+      const labelMode = document.getElementById('labelModeNominal');
+
+      if (currentJenisPajak === 'ppn') {
+        const isInclude = document.getElementById('switchIncludePpn').checked;
+        const subId = document.getElementById('subKategoriSelect').value;
+        const item = subCategories.ppn.find(x => x.id === subId) || subCategories.ppn[0];
+
+        let activePpnRate = item.forcedRate ? item.forcedRate : ppnRate;
+        let dppRatio = 0.10;
+        let deskripsiItem = item.label;
+        let dasarHukum = item.dasarHukum;
+        let kodeFaktur = item.kodeFaktur;
+
+        if (item.id === 'ppn_custom') {
+          const customVal = parseFloat(document.getElementById('inputCustomDpp').value) || 10;
+          dppRatio = Math.max(0.001, Math.min(1.0, customVal / 100));
+          deskripsiItem = `DPP Kustom (${(dppRatio * 100).toFixed(1)}%)`;
+          dasarHukum = `DPP Nilai Lain ${(dppRatio * 100).toFixed(1)}%`;
+        } else {
+          dppRatio = item.dppRatio;
+        }
+
+        const tarifEfektif = dppRatio * activePpnRate;
+
+        let nilaiPokok = 0;
+        let dpp = 0;
+        let ppn = 0;
+        let totalTagihan = 0;
+        let netPenjual = 0;
+
+        if (rawNominal > 0) {
+          if (!isInclude) {
+            // Exclude PPN: Input adalah Nilai Pokok Transaksi (Sebelum PPN)
+            nilaiPokok = rawNominal;
+            dpp = nilaiPokok * dppRatio;
+            ppn = dpp * activePpnRate;
+            totalTagihan = nilaiPokok + ppn;
+            netPenjual = nilaiPokok;
+          } else {
+            // Include PPN: Input adalah Total Tagihan (Sudah Termasuk PPN)
+            totalTagihan = rawNominal;
+            nilaiPokok = rawNominal / (1 + tarifEfektif);
+            dpp = nilaiPokok * dppRatio;
+            ppn = dpp * activePpnRate;
+            netPenjual = nilaiPokok;
+          }
+        }
+
+        // DOM Update untuk PPN
+        if (!isInclude) {
+          badge.innerText = item.id === 'ppn_11_12' 
+            ? 'DPP Nilai Lain (11/12) • PPN 11%' 
+            : `PPN Exclude (Belum PPN) • ${(activePpnRate * 100)}%`;
+          badge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30';
+          labelMode.innerText = 'Nilai Kontrak / DPP Pokok';
+          document.getElementById('lblMainResult').innerText = 'Total Tagihan Dibayar Pembeli (Include PPN)';
+          document.getElementById('resNetVendor').innerText = formatRupiah(totalTagihan, 2);
+          document.getElementById('lblBebanResult').innerText = 'Nilai Kontrak Pokok';
+          document.getElementById('resBebanTotal').innerText = formatRupiah(nilaiPokok, 2);
+          document.getElementById('resKetBeban').innerText = 'Sebelum PPN';
+          document.getElementById('lblBrutoResult').innerText = 'Nilai Pokok Transaksi:';
+          document.getElementById('resBrutoFinal').innerText = formatRupiah(nilaiPokok, 2);
+        } else {
+          badge.innerText = `PPN Include (Sudah PPN) • ${(activePpnRate * 100)}%`;
+          badge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30';
+          labelMode.innerText = 'Total Tagihan (Include PPN)';
+          document.getElementById('lblMainResult').innerText = 'Kas Bersih Penjual (Exclude PPN)';
+          document.getElementById('resNetVendor').innerText = formatRupiah(netPenjual, 2);
+          document.getElementById('lblBebanResult').innerText = 'Total Tagihan Dibayar';
+          document.getElementById('resBebanTotal').innerText = formatRupiah(totalTagihan, 2);
+          document.getElementById('resKetBeban').innerText = 'Termasuk PPN';
+          document.getElementById('lblBrutoResult').innerText = 'Total Transaksi (Gross):';
+          document.getElementById('resBrutoFinal').innerText = formatRupiah(totalTagihan, 2);
+        }
+
+        if (item.id === 'ppn_11_12') {
+          document.getElementById('lblTaxResult').innerText = 'PPN Terutang (12%)';
+          document.getElementById('resPph').innerText = formatRupiah(ppn, 2);
+          document.getElementById('resTarifEfektif').innerText = '12% × DPP Nilai Lain = Efektif 11%';
+          document.getElementById('lblDppResult').innerText = 'DPP Nilai Lain (11/12):';
+        } else if (item.id === 'ppn_standar') {
+          document.getElementById('lblTaxResult').innerText = `PPN Terutang (${(activePpnRate * 100)}%)`;
+          document.getElementById('resPph').innerText = formatRupiah(ppn, 2);
+          document.getElementById('resTarifEfektif').innerText = `Tarif PPN: ${(activePpnRate * 100)}% (DPP Penuh)`;
+          document.getElementById('lblDppResult').innerText = 'Dasar Pengenaan Pajak (DPP):';
+        } else {
+          document.getElementById('lblTaxResult').innerText = `PPN Terutang (${(activePpnRate * 100)}%)`;
+          document.getElementById('resPph').innerText = formatRupiah(ppn, 2);
+          document.getElementById('resTarifEfektif').innerText = `Tarif Efektif: ${(tarifEfektif * 100).toFixed(2)}% (DPP ${(dppRatio * 100).toFixed(0)}% × ${(activePpnRate * 100)}%)`;
+          document.getElementById('lblDppResult').innerText = `DPP Nilai Lain (${(dppRatio * 100).toFixed(0)}%):`;
+        }
+
+        document.getElementById('resDpp').innerText = formatRupiah(dpp, 2);
+        document.getElementById('resKodeFaktur').innerText = `${kodeFaktur} • ${dasarHukum}`;
+
+        window.lastCalculation = {
+          isPpn: true,
+          jenis: 'PPN',
+          subKategoriLabel: deskripsiItem,
+          isInclude,
+          ppnRate,
+          dppRatio,
+          tarifEfektif,
+          tarifDeskripsi: `${item.label}`,
+          rawNominal,
+          nilaiPokok: Number(nilaiPokok.toFixed(2)),
+          dpp: Number(dpp.toFixed(2)),
+          pph: Number(ppn.toFixed(2)),
+          totalTagihan: Number(totalTagihan.toFixed(2)),
+          netPenjual: Number(netPenjual.toFixed(2)),
+          dasarHukum,
+          kodeFaktur,
+          tanggal: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+        };
+
+        return;
+      }
+
+      // Kategori PPh (PPh 23, PPh 21, PPh 4 ayat 2)
+      document.getElementById('lblMainResult').innerText = 'Kas Ditransfer ke Rekening Vendor';
+      document.getElementById('lblTaxResult').innerText = 'Potongan PPh Terutang';
+      document.getElementById('lblBebanResult').innerText = 'Total Beban Perusahaan';
+      document.getElementById('lblBrutoResult').innerText = 'Nilai Bruto Tagihan/SPT:';
+      document.getElementById('lblDppResult').innerText = 'Dasar Pengenaan Pajak (DPP):';
+
+      const hasNpwp = document.getElementById('switchNpwp').checked;
+      const isGrossUp = document.getElementById('switchGrossUp').checked;
+      const subId = document.getElementById('subKategoriSelect').value;
+
+      let tarifPajak = 0.02;
+      let dppRatio = 1.0;
+      let tarifDeskripsi = '';
+
+      if (currentJenisPajak === 'pph23') {
+        if (hasNpwp) {
+          tarifPajak = 0.02; // 2%
+          tarifDeskripsi = 'PPh 23 (2% - Ber-NPWP)';
+        } else {
+          tarifPajak = 0.04; // 4% (+100%)
+          tarifDeskripsi = 'PPh 23 (4% - Tanpa NPWP)';
+        }
+        dppRatio = 1.0;
+      } else if (currentJenisPajak === 'pph21') {
+        const item = subCategories.pph21.find(x => x.id === subId) || subCategories.pph21[0];
+        tarifPajak = item.tarif;
+        dppRatio = item.dppRatio; // 0.5 (50% dari Bruto)
+        tarifDeskripsi = `PPh 21 (${(tarifPajak*100)}% × DPP 50%)`;
+      } else if (currentJenisPajak === 'pph4_2') {
+        const item = subCategories.pph4_2.find(x => x.id === subId) || subCategories.pph4_2[0];
+        tarifPajak = item.tarif;
+        dppRatio = item.dppRatio;
+        tarifDeskripsi = `PPh 4(2) (${(tarifPajak*100)}% Final)`;
+      }
+
+      const tarifEfektif = tarifPajak * dppRatio;
+
+      let brutoFinal = 0;
+      let pph = 0;
+      let netVendor = 0;
+      let bebanPerusahaan = 0;
+      let dpp = 0;
+
+      if (rawNominal > 0) {
+        if (isGrossUp) {
+          // Vendor terima utuh = rawNominal
+          brutoFinal = rawNominal / (1 - tarifEfektif);
+          dpp = brutoFinal * dppRatio;
+          pph = dpp * tarifPajak;
+          netVendor = brutoFinal - pph;
+          bebanPerusahaan = brutoFinal;
+        } else {
+          // Potong langsung dari rawNominal
+          brutoFinal = rawNominal;
+          dpp = brutoFinal * dppRatio;
+          pph = dpp * tarifPajak;
+          netVendor = brutoFinal - pph;
+          bebanPerusahaan = brutoFinal;
+        }
+      }
+
+      // Update Tampilan DOM
+      document.getElementById('resNetVendor').innerText = formatRupiah(netVendor);
+      document.getElementById('resPph').innerText = formatRupiah(pph);
+      document.getElementById('resBebanTotal').innerText = formatRupiah(bebanPerusahaan);
+      document.getElementById('resBrutoFinal').innerText = formatRupiah(brutoFinal);
+      document.getElementById('resDpp').innerText = formatRupiah(dpp);
+      document.getElementById('resTarifEfektif').innerText = `Tarif Efektif: ${(tarifEfektif * 100).toFixed(2)}% (${tarifDeskripsi})`;
+      document.getElementById('resKetBeban').innerText = 'Vendor + Pajak';
+
+      if (isGrossUp) {
+        badge.innerText = 'Gross-Up (Vendor Terima Utuh)';
+        badge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30';
+        labelMode.innerText = 'Target Diterima Bersih Vendor';
+      } else {
+        badge.innerText = 'Non Gross-Up (Potong Vendor)';
+        badge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30';
+        labelMode.innerText = 'Nilai Kontrak / Bruto';
+      }
+
+      // Simpan data kalkulasi terakhir untuk tombol salin
+      window.lastCalculation = {
+        isPpn: false,
+        jenis: currentJenisPajak.toUpperCase(),
+        tarifDeskripsi,
+        tarifEfektifPersen: (tarifEfektif * 100).toFixed(2) + '%',
+        isGrossUp,
+        rawNominal,
+        brutoFinal: Number(brutoFinal.toFixed(2)),
+        dpp: Number(dpp.toFixed(2)),
+        pph: Number(pph.toFixed(2)),
+        netVendor: Number(netVendor.toFixed(2)),
+        bebanPerusahaan: Number(bebanPerusahaan.toFixed(2)),
+        tanggal: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+      };
+    }
+
+    function salinRingkasan() {
+      if (!window.lastCalculation || window.lastCalculation.rawNominal === 0) {
+        alert('Silakan masukkan nilai transaksi terlebih dahulu.');
+        return;
+      }
+
+      const c = window.lastCalculation;
+      let text = '';
+
+      if (c.isPpn) {
+        text = `📋 *RINGKASAN PERHITUNGAN PPN*
+• Kategori: ${c.subKategoriLabel}
+• Dasar Hukum: ${c.dasarHukum}
+• Kode e-Faktur: ${c.kodeFaktur}
+• Skema Harga: ${c.isInclude ? 'Include PPN (Harga Sudah Termasuk Pajak)' : 'Exclude PPN (Harga Belum Termasuk Pajak)'}
+• Tarif Pokok: ${(c.ppnRate * 100)}% | Tarif Efektif: ${(c.tarifEfektif * 100).toFixed(2)}%
+---------------------------------
+• Nilai Input Transaksi: ${formatRupiah(c.rawNominal)}
+• Nilai Pokok Transaksi: ${formatRupiah(c.nilaiPokok, 2)}
+• DPP (Dasar Pengenaan Pajak): ${formatRupiah(c.dpp, 2)}
+• PPN Terutang: ${formatRupiah(c.pph, 2)}
+• *${c.isInclude ? 'Kas Bersih Penjual (Exclude PPN):' : 'Total Tagihan (Include PPN):'}* ${formatRupiah(c.isInclude ? c.netPenjual : c.totalTagihan, 2)}
+---------------------------------
+💡 e-Faktur: Rekam DPP sebesar ${formatRupiah(c.dpp, 2)} dengan Kode Faktur ${c.kodeFaktur}
+Dihitung otomatis via Kalkulator Pajak`;
+      } else {
+        text = `📋 *RINGKASAN PERHITUNGAN PPh JASA*
+• Jenis Pajak: ${c.jenis} (${c.tarifDeskripsi})
+• Skema: ${c.isGrossUp ? 'Gross-Up (Pajak Ditanggung)' : 'Non Gross-Up (Potong Vendor)'}
+---------------------------------
+• Nilai Kontrak/Input: ${formatRupiah(c.rawNominal)}
+• Nilai Bruto SPT: ${formatRupiah(c.brutoFinal)}
+• Dasar Pengenaan (DPP): ${formatRupiah(c.dpp)}
+• Potongan PPh: ${formatRupiah(c.pph)}
+• *Kas Ditransfer ke Vendor:* ${formatRupiah(c.netVendor)}
+• Total Beban Perusahaan: ${formatRupiah(c.bebanPerusahaan)}
+---------------------------------
+Dihitung otomatis via Kalkulator Pajak`;
+      }
+
+      navigator.clipboard.writeText(text).then(() => {
+        const btnText = document.getElementById('btnCopyText');
+        btnText.innerText = 'Tersalin!';
+        setTimeout(() => { btnText.innerText = 'Salin Hasil'; }, 2000);
+      });
+    }
+
+    function simpanRiwayat() {
+      if (!window.lastCalculation || window.lastCalculation.rawNominal === 0) {
+        alert('Masukkan nominal terlebih dahulu.');
+        return;
+      }
+
+      let history = JSON.parse(localStorage.getItem('pph_history') || '[]');
+      history.unshift({
+        ...window.lastCalculation,
+        id: Date.now()
+      });
+
+      // Simpan max 10 item terakhir
+      history = history.slice(0, 10);
+      localStorage.setItem('pph_history', JSON.stringify(history));
+      renderRiwayat();
+    }
+
+    function renderRiwayat() {
+      const listEl = document.getElementById('listRiwayat');
+      const history = JSON.parse(localStorage.getItem('pph_history') || '[]');
+
+      if (history.length === 0) {
+        listEl.innerHTML = `<div class="text-slate-400 text-center py-4 text-xs italic">Belum ada riwayat perhitungan tersimpan.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = history.map((item, index) => {
+        if (item.isPpn) {
+          const mainVal = item.isInclude ? item.netPenjual : item.totalTagihan;
+          const badgeMode = item.isInclude ? 'Include' : 'Exclude';
+          const dppPct = (item.dppRatio * 100).toFixed(0);
+          return `
+            <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="font-bold text-slate-800 text-[11px] flex items-center space-x-1.5">
+                    <span class="text-indigo-600 font-extrabold">PPN</span>
+                    <span class="text-[10px] px-1.5 py-0.2 rounded font-normal bg-indigo-100 text-indigo-800">
+                      ${badgeMode} • DPP ${dppPct}%
+                    </span>
+                  </div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">
+                    Input: ${formatRupiah(item.rawNominal)} • PPN: <span class="text-amber-600 font-semibold">${formatRupiah(item.pph, 2)}</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs font-black text-indigo-600">${formatRupiah(mainVal, 2)}</div>
+                  <div class="text-[9px] text-slate-400">${item.tanggal}</div>
+                </div>
+              </div>
+              <div class="pt-2 border-t border-slate-200/60 flex items-center justify-end space-x-1.5">
+                <button type="button" onclick="bukaModalSlipRiwayat(${index})" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center space-x-1 border border-emerald-200 transition">
+                  <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                  <span>Cetak PDF</span>
+                </button>
+                <button type="button" onclick="bagikanRiwayatWa(${index})" class="px-2 py-1 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 font-bold text-[10px] flex items-center space-x-1 border border-green-200 transition">
+                  <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                  <span>WhatsApp</span>
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-bold text-slate-800 text-[11px] flex items-center space-x-1.5">
+                  <span>${item.jenis}</span>
+                  <span class="text-[10px] px-1.5 py-0.2 rounded font-normal ${item.isGrossUp ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
+                    ${item.isGrossUp ? 'Gross-Up' : 'Potong'}
+                  </span>
+                </div>
+                <div class="text-[10px] text-slate-500 mt-0.5">
+                  Input: ${formatRupiah(item.rawNominal)} • PPh: <span class="text-amber-600 font-semibold">${formatRupiah(item.pph, 2)}</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs font-black text-emerald-600">${formatRupiah(item.netVendor, 2)}</div>
+                <div class="text-[9px] text-slate-400">${item.tanggal}</div>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-slate-200/60 flex items-center justify-end space-x-1.5">
+              <button type="button" onclick="bukaModalSlipRiwayat(${index})" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center space-x-1 border border-emerald-200 transition">
+                <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                <span>Cetak PDF</span>
+              </button>
+              <button type="button" onclick="bagikanRiwayatWa(${index})" class="px-2 py-1 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 font-bold text-[10px] flex items-center space-x-1 border border-green-200 transition">
+                <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                <span>WhatsApp</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function hapusRiwayat() {
+      if (confirm('Hapus seluruh riwayat perhitungan?')) {
+        localStorage.removeItem('pph_history');
+        renderRiwayat();
+      }
+    }
+
+    // ==========================================
+    // Switcher Tampilan (Kalkulator vs Kalender)
+    // ==========================================
+    function switchMainTab(tab) {
+      const btnKalkulator = document.getElementById('tabNavKalkulator');
+      const btnKalender = document.getElementById('tabNavKalender');
+      const secKalkulator = document.getElementById('sectionKalkulator');
+      const secKalender = document.getElementById('sectionKalender');
+
+      if (tab === 'kalkulator') {
+        btnKalkulator.className = 'py-2.5 rounded-xl bg-white text-emerald-700 shadow-sm transition-all flex items-center justify-center space-x-1.5 font-bold';
+        btnKalender.className = 'py-2.5 rounded-xl text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center space-x-1.5 font-medium';
+        secKalkulator.classList.remove('hidden');
+        secKalender.classList.add('hidden');
+      } else {
+        btnKalender.className = 'py-2.5 rounded-xl bg-white text-emerald-700 shadow-sm transition-all flex items-center justify-center space-x-1.5 font-bold';
+        btnKalkulator.className = 'py-2.5 rounded-xl text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center space-x-1.5 font-medium';
+        secKalkulator.classList.add('hidden');
+        secKalender.classList.remove('hidden');
+        initKalenderPajak();
+      }
+    }
+
+    // ==========================================
+    // Logika Kalender Pajak & Reminder
+    // ==========================================
+    let kalenderTahun = new Date().getFullYear();
+    let kalenderBulan = new Date().getMonth();
+
+    const namaBulanIndo = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+
+    function gantiBulanKalender(delta) {
+      kalenderBulan += delta;
+      if (kalenderBulan > 11) {
+        kalenderBulan = 0;
+        kalenderTahun++;
+      } else if (kalenderBulan < 0) {
+        kalenderBulan = 11;
+        kalenderTahun--;
+      }
+      renderKalenderBulan();
+      renderAgendaBulan();
+    }
+
+    function initKalenderPajak() {
+      updateCountdownPajak();
+      renderKalenderBulan();
+      renderAgendaBulan();
+    }
+
+    function updateCountdownPajak() {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+      const currentDay = now.getDate();
+
+      const lastDayCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      const targets = [
+        { day: 10, title: 'Batas Setor PPh Potput (PPh 21, 23, 4 ayat 2)' },
+        { day: 15, title: 'Batas Setor PPh Sendiri (PPh 25 & Final UMKM)' },
+        { day: 20, title: 'Batas Lapor SPT Masa Unifikasi & PPh 21' },
+        { day: lastDayCurrentMonth, title: 'Batas Akhir Setor & Lapor SPT Masa PPN' }
+      ];
+
+      let targetTerdekat = null;
+      let targetDate = null;
+
+      for (const t of targets) {
+        if (currentDay <= t.day) {
+          targetTerdekat = t;
+          targetDate = new Date(currentYear, currentMonth, t.day);
+          break;
+        }
+      }
+
+      if (!targetTerdekat) {
+        targetTerdekat = targets[0];
+        targetDate = new Date(currentYear, currentMonth + 1, 10);
+      }
+
+      const tNow = new Date(currentYear, currentMonth, currentDay).getTime();
+      const tTarget = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate()).getTime();
+      const diffDays = Math.round((tTarget - tNow) / (1000 * 60 * 60 * 24));
+
+      const badgeEl = document.getElementById('badgeCountdownHari');
+      const judulEl = document.getElementById('txtJudulDeadline');
+      const tglEl = document.getElementById('txtTglDeadline');
+
+      if (diffDays === 0) {
+        badgeEl.innerText = 'HARI INI!';
+        badgeEl.className = 'text-xs font-black px-2 py-0.5 bg-red-600 text-white rounded-lg shadow-sm animate-pulse';
+      } else if (diffDays === 1) {
+        badgeEl.innerText = 'BESOK!';
+        badgeEl.className = 'text-xs font-black px-2 py-0.5 bg-red-500 text-white rounded-lg shadow-sm';
+      } else {
+        badgeEl.innerText = `${diffDays} Hari Lagi`;
+        badgeEl.className = 'text-xs font-black px-2 py-0.5 bg-amber-500 text-white rounded-lg shadow-sm';
+      }
+
+      judulEl.innerText = targetTerdekat.title;
+      tglEl.innerHTML = `Batas Waktu: <strong>${targetDate.getDate()} ${namaBulanIndo[targetDate.getMonth()]} ${targetDate.getFullYear()}</strong>`;
+    }
+
+    function renderKalenderBulan() {
+      const judulEl = document.getElementById('judulBulanTahunKalender');
+      judulEl.innerText = `${namaBulanIndo[kalenderBulan]} ${kalenderTahun}`;
+
+      const gridEl = document.getElementById('gridKalenderBulan');
+      gridEl.innerHTML = '';
+
+      const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+      days.forEach((d, i) => {
+        const h = document.createElement('div');
+        h.className = `font-bold py-1 ${i >= 5 ? 'text-red-500' : 'text-slate-400'}`;
+        h.innerText = d;
+        gridEl.appendChild(h);
+      });
+
+      const firstDayObj = new Date(kalenderTahun, kalenderBulan, 1);
+      let startingDay = firstDayObj.getDay();
+      startingDay = (startingDay === 0) ? 6 : startingDay - 1;
+
+      const totalDays = new Date(kalenderTahun, kalenderBulan + 1, 0).getDate();
+      const prevMonthDays = new Date(kalenderTahun, kalenderBulan, 0).getDate();
+
+      for (let i = startingDay - 1; i >= 0; i--) {
+        const cell = document.createElement('div');
+        cell.className = 'py-2 text-slate-300 opacity-40 select-none';
+        cell.innerText = prevMonthDays - i;
+        gridEl.appendChild(cell);
+      }
+
+      const today = new Date();
+      const isCurrentMonth = (today.getFullYear() === kalenderTahun && today.getMonth() === kalenderBulan);
+
+      for (let d = 1; d <= totalDays; d++) {
+        const cell = document.createElement('div');
+        const dayOfWeek = (startingDay + d - 1) % 7;
+        const isWeekend = (dayOfWeek === 5 || dayOfWeek === 6);
+        const isToday = isCurrentMonth && (today.getDate() === d);
+
+        let cellClass = 'py-2 rounded-xl relative cursor-pointer font-medium transition text-slate-700 hover:bg-slate-100 ';
+        let dot = '';
+
+        if (d === 10) {
+          cellClass = 'py-2 rounded-xl relative cursor-pointer font-bold bg-amber-500/15 text-amber-700 ring-1 ring-amber-500/40 hover:bg-amber-500/25 ';
+          dot = '<span class="w-1.5 h-1.5 bg-amber-500 rounded-full absolute bottom-1 left-1/2 -translate-x-1/2"></span>';
+        } else if (d === 15) {
+          cellClass = 'py-2 rounded-xl relative cursor-pointer font-bold bg-amber-500/15 text-amber-700 ring-1 ring-amber-500/40 hover:bg-amber-500/25 ';
+          dot = '<span class="w-1.5 h-1.5 bg-amber-500 rounded-full absolute bottom-1 left-1/2 -translate-x-1/2"></span>';
+        } else if (d === 20) {
+          cellClass = 'py-2 rounded-xl relative cursor-pointer font-bold bg-blue-500/15 text-blue-700 ring-1 ring-blue-500/40 hover:bg-blue-500/25 ';
+          dot = '<span class="w-1.5 h-1.5 bg-blue-500 rounded-full absolute bottom-1 left-1/2 -translate-x-1/2"></span>';
+        } else if (d === totalDays) {
+          cellClass = 'py-2 rounded-xl relative cursor-pointer font-bold bg-red-500/15 text-red-700 ring-1 ring-red-500/40 hover:bg-red-500/25 ';
+          dot = '<span class="w-1.5 h-1.5 bg-red-500 rounded-full absolute bottom-1 left-1/2 -translate-x-1/2"></span>';
+        } else if (isToday) {
+          cellClass += 'ring-2 ring-emerald-500 font-extrabold text-emerald-700 ';
+        } else if (isWeekend) {
+          cellClass += 'text-red-500 ';
+        }
+
+        cell.className = cellClass;
+        cell.innerHTML = `${d}${dot}`;
+        cell.onclick = () => tampilkanDetailTanggal(d, totalDays);
+        gridEl.appendChild(cell);
+      }
+    }
+
+    function tampilkanDetailTanggal(day, totalDays) {
+      const box = document.getElementById('boxDetailTanggal');
+      const judul = document.getElementById('detTglJudul');
+      const badge = document.getElementById('detTglBadge');
+      const deskripsi = document.getElementById('detTglDeskripsi');
+
+      box.classList.remove('hidden');
+
+      if (day === 10) {
+        judul.innerText = `Tanggal 10 ${namaBulanIndo[kalenderBulan]}`;
+        badge.innerText = 'Batas Setor PPh';
+        badge.className = 'text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-100 text-amber-800';
+        deskripsi.innerText = 'Batas akhir penyetoran PPh yang dipotong/dipungut oleh pemotong (PPh 21, PPh 23, PPh 4 ayat 2, PPh 22) masa pajak sebelumnya via kode e-Billing.';
+      } else if (day === 15) {
+        judul.innerText = `Tanggal 15 ${namaBulanIndo[kalenderBulan]}`;
+        badge.innerText = 'Setor PPh Sendiri';
+        badge.className = 'text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-100 text-amber-800';
+        deskripsi.innerText = 'Batas akhir pembayaran PPh yang dibayar sendiri oleh Wajib Pajak (PPh Pasal 25 Angsuran Bulanan & PPh Final UMKM 0,5% PP 55/2022).';
+      } else if (day === 20) {
+        judul.innerText = `Tanggal 20 ${namaBulanIndo[kalenderBulan]}`;
+        badge.innerText = 'Batas Lapor SPT';
+        badge.className = 'text-[10px] px-1.5 py-0.5 rounded font-semibold bg-blue-100 text-blue-800';
+        deskripsi.innerText = 'Batas akhir pelaporan SPT Masa PPh Unifikasi (PPh 23, 4 ayat 2, 22, 15, 26) dan SPT Masa PPh Pasal 21/26 masa pajak sebelumnya.';
+      } else if (day === totalDays) {
+        judul.innerText = `Tanggal ${totalDays} ${namaBulanIndo[kalenderBulan]}`;
+        badge.innerText = 'Batas PPN';
+        badge.className = 'text-[10px] px-1.5 py-0.5 rounded font-semibold bg-red-100 text-red-800';
+        deskripsi.innerText = 'Batas akhir pembayaran PPN Kurang Bayar dan pelaporan SPT Masa PPN 1111 untuk masa pajak sebelumnya via web-efaktur DJP.';
+      } else {
+        judul.innerText = `Tanggal ${day} ${namaBulanIndo[kalenderBulan]}`;
+        badge.innerText = 'Hari Kerja Normal';
+        badge.className = 'text-[10px] px-1.5 py-0.5 rounded font-semibold bg-slate-200 text-slate-700';
+        deskripsi.innerText = 'Tidak ada batas jatuh tempo rutin nasional pada tanggal ini. Catatan: Apabila tanggal jatuh tempo jatuh pada hari libur/akhir pekan, batas waktu bergeser ke hari kerja berikutnya.';
+      }
+    }
+
+    function renderAgendaBulan() {
+      const container = document.getElementById('listAgendaPajak');
+      const totalDays = new Date(kalenderTahun, kalenderBulan + 1, 0).getDate();
+      const bulanStr = namaBulanIndo[kalenderBulan];
+
+      const items = [
+        {
+          day: 10,
+          type: 'pph_potput',
+          title: 'Batas Setor PPh Pemotongan',
+          tag: 'Setor',
+          tagColor: 'bg-amber-100 text-amber-800 border-amber-200',
+          desc: 'PPh 21, PPh 23, PPh 4 ayat (2) Masa Pajak Sebelumnya'
+        },
+        {
+          day: 15,
+          type: 'pph_sendiri',
+          title: 'Batas Setor PPh Sendiri',
+          tag: 'Setor',
+          tagColor: 'bg-amber-100 text-amber-800 border-amber-200',
+          desc: 'PPh Pasal 25 Angsuran & PPh Final UMKM 0,5% (PP 55/2022)'
+        },
+        {
+          day: 20,
+          type: 'lapor_spt',
+          title: 'Batas Lapor SPT Masa PPh',
+          tag: 'Lapor',
+          tagColor: 'bg-blue-100 text-blue-800 border-blue-200',
+          desc: 'SPT Masa PPh Unifikasi & SPT Masa PPh 21/26'
+        },
+        {
+          day: totalDays,
+          type: 'ppn_akhir',
+          title: 'Batas Setor & Lapor PPN',
+          tag: 'PPN',
+          tagColor: 'bg-red-100 text-red-800 border-red-200',
+          desc: 'Setor PPN Terutang & Lapor SPT Masa PPN 1111'
+        }
+      ];
+
+      container.innerHTML = items.map(item => `
+        <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between">
+          <div class="flex items-start space-x-2.5">
+            <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 font-extrabold flex flex-col items-center justify-center shrink-0 border border-slate-200">
+              <span class="text-xs leading-none">${item.day}</span>
+              <span class="text-[9px] uppercase text-slate-500 font-bold">${bulanStr.slice(0, 3)}</span>
+            </div>
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="font-bold text-slate-800 text-xs">${item.title}</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded font-semibold border ${item.tagColor}">
+                  ${item.tag}
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">${item.desc}</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-1 shrink-0 ml-2">
+            <button type="button" onclick="bukaGoogleCalendarEvent('${item.type}', ${item.day})"
+              title="Pasang Alarm Google Calendar"
+              class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10px] shadow active:scale-95 transition flex items-center space-x-1">
+              <span>+ Alarm</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function bukaGoogleCalendarEvent(type, day) {
+      const year = kalenderTahun;
+      const month = kalenderBulan + 1;
+      const dateStr = `${year}${month < 10 ? '0' + month : month}${day < 10 ? '0' + day : day}`;
+      
+      let title = 'Batas Waktu Pajak DJP';
+      let details = 'Pengingat batas waktu penyetoran / pelaporan pajak resmi via CalculaTAX.';
+
+      if (type === 'pph_potput') {
+        title = 'Batas Setor PPh 21, 23, 4(2) - CalculaTAX';
+        details = 'Batas akhir penyetoran PPh Potput masa pajak sebelumnya via kode e-Billing.';
+      } else if (type === 'pph_sendiri') {
+        title = 'Batas Setor PPh 25 & Final UMKM - CalculaTAX';
+        details = 'Batas akhir penyetoran angsuran PPh 25 dan PPh Final UMKM 0.5%.';
+      } else if (type === 'lapor_spt') {
+        title = 'Batas Lapor SPT Masa Unifikasi & PPh 21 - CalculaTAX';
+        details = 'Batas akhir pelaporan SPT Masa Unifikasi & PPh 21 masa pajak sebelumnya.';
+      } else if (type === 'ppn_akhir') {
+        title = 'Batas Akhir Setor & Lapor SPT Masa PPN - CalculaTAX';
+        details = 'Batas akhir penyetoran PPN terutang dan pelaporan SPT Masa PPN 1111.';
+      }
+
+      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${dateStr}T090000/${dateStr}T100000&details=${encodeURIComponent(details)}&add=`;
+      window.open(url, '_blank');
+    }
+
+    function bukaGoogleCalendarBulanIni() {
+      bukaGoogleCalendarEvent('pph_potput', 10);
+    }
+
+    function unduhSemuaPengingatKalenderIcs() {
+      const year = kalenderTahun;
+      let icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//CalculaTAX//Kalender Pajak Indonesia//ID',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'X-WR-CALNAME:Jadwal Pajak DJP - CalculaTAX'
+      ];
+
+      for (let m = 1; m <= 12; m++) {
+        const mStr = m < 10 ? '0' + m : m;
+        const totalDays = new Date(year, m, 0).getDate();
+
+        const events = [
+          { day: 10, summary: 'Batas Setor PPh 21, 23, 4(2)', desc: 'Batas penyetoran PPh Potput via e-Billing.' },
+          { day: 15, summary: 'Batas Setor PPh 25 & Final UMKM', desc: 'Batas penyetoran PPh setor sendiri.' },
+          { day: 20, summary: 'Batas Lapor SPT Masa Unifikasi & 21', desc: 'Batas pelaporan SPT Masa Unifikasi via DJP Online.' },
+          { day: totalDays, summary: 'Batas Setor & Lapor SPT Masa PPN', desc: 'Batas setor & lapor SPT Masa PPN 1111.' }
+        ];
+
+        events.forEach((ev, idx) => {
+          const dStr = ev.day < 10 ? '0' + ev.day : ev.day;
+          icsContent.push('BEGIN:VEVENT');
+          icsContent.push(`UID:tax-${year}${mStr}${dStr}-${idx}@calculatax`);
+          icsContent.push(`DTSTAMP:${year}0101T000000Z`);
+          icsContent.push(`DTSTART;VALUE=DATE:${year}${mStr}${dStr}`);
+          icsContent.push(`DTEND;VALUE=DATE:${year}${mStr}${dStr}`);
+          icsContent.push(`SUMMARY:${ev.summary}`);
+          icsContent.push(`DESCRIPTION:${ev.desc} (Dihitung via CalculaTAX)`);
+          icsContent.push('BEGIN:VALARM');
+          icsContent.push('TRIGGER:-P3D');
+          icsContent.push('ACTION:DISPLAY');
+          icsContent.push(`DESCRIPTION:Pengingat H-3: ${ev.summary}`);
+          icsContent.push('END:VALARM');
+          icsContent.push('BEGIN:VALARM');
+          icsContent.push('TRIGGER:-P1D');
+          icsContent.push('ACTION:DISPLAY');
+          icsContent.push(`DESCRIPTION:Pengingat H-1: ${ev.summary}`);
+          icsContent.push('END:VALARM');
+          icsContent.push('END:VEVENT');
+        });
+      }
+
+      icsContent.push('END:VCALENDAR');
+
+      const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `Kalender-Pajak-CalculaTAX-${year}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      alert('File .ICS kalender pajak berhasil diunduh! Silakan buka file tersebut di HP Anda untuk otomatis menambahkan seluruh jadwal ke Google Calendar atau Apple Calendar dengan alarm.');
+    }
+
+    function toggleEmailReminder(input) {
+      localStorage.setItem('email_reminder_active', input.checked ? 'true' : 'false');
+      if (input.checked) {
+        alert('Fitur pengingat email aktif! Sistem akan mengirimkan notifikasi H-3 sebelum jatuh tempo ke email akun terdaftar Anda.');
+      } else {
+        alert('Pengingat email dinonaktifkan.');
+      }
+    }
+
+    // ==========================================
+    // Logika Modal Slip Memo PDF & Share
+    // ==========================================
+    let activeSlipData = null;
+
+    function renderDataKeSlip(data) {
+      activeSlipData = data;
+      
+      const isPpn = data.isPpn;
+      const refId = 'CTX-' + (data.id ? String(data.id).slice(-6) : Math.floor(100000 + Math.random() * 900000));
+      document.getElementById('slipRefNumber').innerText = refId;
+      document.getElementById('slipDateTime').innerText = data.tanggal ? `${new Date().toLocaleDateString('id-ID')} ${data.tanggal}` : new Date().toLocaleString('id-ID');
+
+      if (isPpn) {
+        document.getElementById('slipTaxCategoryTitle').innerText = 'SLIP MEMO PERHITUNGAN PPN';
+        document.getElementById('slipSubInfo').innerText = `${data.subKategoriLabel || 'PPN'} • ${data.isInclude ? 'Include PPN' : 'Exclude PPN'}`;
+        document.getElementById('slipJenisPajak').innerText = 'PPN (Pajak Pertambahan Nilai)';
+        document.getElementById('slipSkema').innerText = data.isInclude ? 'Include PPN (Harga Sudah Termasuk Pajak)' : 'Exclude PPN (Harga Belum Termasuk Pajak)';
+        document.getElementById('slipTarif').innerText = `${(data.tarifEfektif * 100).toFixed(2)}% (Tarif Pokok ${(data.ppnRate * 100)}%)`;
+        document.getElementById('slipLblNpwpFaktur').innerText = 'Kode e-Faktur:';
+        document.getElementById('slipNpwpFaktur').innerText = `${data.kodeFaktur || '040'} (${data.dasarHukum || 'DPP Nilai Lain'})`;
+
+        document.getElementById('slipLblKontrak').innerText = 'Nilai Pokok Transaksi:';
+        document.getElementById('slipValKontrak').innerText = formatRupiah(data.nilaiPokok);
+        document.getElementById('slipValDpp').innerText = formatRupiah(data.dpp);
+        document.getElementById('slipLblPajak').innerText = 'PPN Terutang:';
+        document.getElementById('slipValPajak').innerText = formatRupiah(data.pph);
+        document.getElementById('slipLblUtama').innerText = data.isInclude ? 'Kas Bersih Penjual:' : 'Total Tagihan Dibayar Pembeli:';
+        document.getElementById('slipValUtama').innerText = formatRupiah(data.isInclude ? data.netPenjual : data.totalTagihan);
+        document.getElementById('slipValBeban').innerText = formatRupiah(data.nilaiPokok);
+
+        document.getElementById('slipCatatan').innerText = `Rekam DPP sebesar ${formatRupiah(data.dpp)} dengan Kode Transaksi ${data.kodeFaktur} pada aplikasi e-Faktur DJP.`;
+      } else {
+        document.getElementById('slipTaxCategoryTitle').innerText = `SLIP MEMO PERHITUNGAN ${data.jenis}`;
+        document.getElementById('slipSubInfo').innerText = `${data.tarifDeskripsi} • ${data.isGrossUp ? 'Gross-Up' : 'Non Gross-Up'}`;
+        document.getElementById('slipJenisPajak').innerText = data.jenis;
+        document.getElementById('slipSkema').innerText = data.isGrossUp ? 'Gross-Up (Pajak Ditanggung Perusahaan)' : 'Non Gross-Up (Potong dari Nilai Tagihan)';
+        document.getElementById('slipTarif').innerText = data.tarifEfektifPersen || '2.00%';
+        document.getElementById('slipLblNpwpFaktur').innerText = 'Status Transaksi:';
+        document.getElementById('slipNpwpFaktur').innerText = data.isGrossUp ? 'Vendor Terima Kas Utuh' : 'Potong Tagihan Vendor';
+
+        document.getElementById('slipLblKontrak').innerText = 'Nilai Kontrak / Input:';
+        document.getElementById('slipValKontrak').innerText = formatRupiah(data.rawNominal);
+        document.getElementById('slipValDpp').innerText = formatRupiah(data.dpp);
+        document.getElementById('slipLblPajak').innerText = `Potongan ${data.jenis}:`;
+        document.getElementById('slipValPajak').innerText = formatRupiah(data.pph);
+        document.getElementById('slipLblUtama').innerText = 'Kas Ditransfer ke Vendor:';
+        document.getElementById('slipValUtama').innerText = formatRupiah(data.netVendor);
+        document.getElementById('slipValBeban').innerText = formatRupiah(data.bebanPerusahaan);
+
+        document.getElementById('slipCatatan').innerText = `Setorkan potongan pajak sebesar ${formatRupiah(data.pph)} via kode e-Billing dan laporkan pada SPT Masa PPh Unifikasi sebelum tanggal 20 bulan berikutnya.`;
+      }
+    }
+
+    function bukaModalSlipAktif() {
+      if (!window.lastCalculation || window.lastCalculation.rawNominal === 0) {
+        alert('Silakan lakukan perhitungan terlebih dahulu sebelum mencetak slip.');
+        return;
+      }
+      renderDataKeSlip(window.lastCalculation);
+      document.getElementById('modalSlipPdf').classList.remove('hidden');
+    }
+
+    function bukaModalSlipRiwayat(index) {
+      const history = JSON.parse(localStorage.getItem('pph_history') || '[]');
+      if (history[index]) {
+        renderDataKeSlip(history[index]);
+        document.getElementById('modalSlipPdf').classList.remove('hidden');
+      }
+    }
+
+    function tutupModalSlip() {
+      document.getElementById('modalSlipPdf').classList.add('hidden');
+    }
+
+    function unduhSlipPdf() {
+      const element = document.getElementById('printableSlipContent');
+      const filename = `Slip-Pajak-${activeSlipData ? activeSlipData.jenis : 'CalculaTAX'}-${Date.now()}.pdf`;
+
+      if (typeof html2pdf !== 'undefined') {
+        const opt = {
+          margin: [8, 8, 8, 8],
+          filename: filename,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+      } else {
+        window.print();
+      }
+    }
+
+    function bagikanSlipWhatsApp() {
+      if (!activeSlipData) return;
+      const d = activeSlipData;
+      let text = '';
+      if (d.isPpn) {
+        text = `*SLIP MEMO PERHITUNGAN PPN*\n` +
+          `Ref: CTX-${d.id ? String(d.id).slice(-6) : 'ONLINE'}\n` +
+          `Kategori: ${d.subKategoriLabel || 'PPN'}\n` +
+          `---------------------------------\n` +
+          `• Nilai Pokok: ${formatRupiah(d.nilaiPokok)}\n` +
+          `• DPP: ${formatRupiah(d.dpp)}\n` +
+          `• PPN Terutang: ${formatRupiah(d.pph)}\n` +
+          `• *Total Tagihan:* ${formatRupiah(d.isInclude ? d.netPenjual : d.totalTagihan)}\n` +
+          `---------------------------------\n` +
+          `Dihitung otomatis via CalculaTAX`;
+      } else {
+        text = `*SLIP MEMO PERHITUNGAN ${d.jenis}*\n` +
+          `Ref: CTX-${d.id ? String(d.id).slice(-6) : 'ONLINE'}\n` +
+          `Skema: ${d.isGrossUp ? 'Gross-Up' : 'Non Gross-Up'} (${d.tarifDeskripsi})\n` +
+          `---------------------------------\n` +
+          `• Nilai Kontrak: ${formatRupiah(d.rawNominal)}\n` +
+          `• DPP: ${formatRupiah(d.dpp)}\n` +
+          `• Potongan Pajak: ${formatRupiah(d.pph)}\n` +
+          `• *Kas Transfer Vendor:* ${formatRupiah(d.netVendor)}\n` +
+          `• Total Beban Perusahaan: ${formatRupiah(d.bebanPerusahaan)}\n` +
+          `---------------------------------\n` +
+          `Dihitung otomatis via CalculaTAX`;
+      }
+
+      window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
+    }
+
+    function bagikanRiwayatWa(index) {
+      const history = JSON.parse(localStorage.getItem('pph_history') || '[]');
+      if (history[index]) {
+        renderDataKeSlip(history[index]);
+        bagikanSlipWhatsApp();
+      }
+    }
+
+    // ==========================================
+    // Autentikasi Netlify Identity (Akses Terbatas)
+    // ==========================================
+    // Autentikasi Netlify Identity & Mode Pengujian
+    // ==========================================
+    const isLocalEnvironment = window.location.protocol === 'file:' || 
+                               window.location.hostname === 'localhost' || 
+                               window.location.hostname === '127.0.0.1';
+
+    function initAuth() {
+      // Jika dibuka secara lokal (file:// di Mac/laptop), otomatis bypass lock screen agar bisa dicoba langsung
+      if (isLocalEnvironment) {
+        bypassAuthMode(true);
+        return;
+      }
+
+      if (typeof netlifyIdentity === 'undefined') {
+        console.warn('Netlify Identity widget tidak ditemukan.');
+        return;
+      }
+
+      netlifyIdentity.on('init', user => {
+        checkAuthState(user);
+      });
+
+      netlifyIdentity.on('login', user => {
+        checkAuthState(user);
+        netlifyIdentity.close();
+      });
+
+      netlifyIdentity.on('logout', () => {
+        checkAuthState(null);
+      });
+
+      netlifyIdentity.on('error', err => {
+        console.warn('Netlify Identity Info:', err);
+        // Jika Identity belum diaktifkan di dashboard Netlify, tetap buka aplikasi agar pengguna tidak terkunci
+        bypassAuthMode(true);
+      });
+
+      if (window.location.hash && (window.location.hash.includes('_token=') || window.location.hash.includes('invite_token='))) {
+        netlifyIdentity.open();
+      }
+
+      const currentUser = netlifyIdentity.currentUser();
+      checkAuthState(currentUser);
+    }
+
+    function checkAuthState(user) {
+      const lockScreen = document.getElementById('authLockScreen');
+      const userProfile = document.getElementById('userProfileBar');
+      const userBadge = document.getElementById('userEmailBadge');
+
+      if (user) {
+        if (lockScreen) lockScreen.classList.add('hidden');
+        if (userProfile) userProfile.classList.remove('hidden');
+        if (userBadge) userBadge.innerText = user.email || 'Pengguna';
+      } else {
+        // Biarkan aplikasi tetap dapat diakses di HP tanpa terhalang error login
+        if (lockScreen) lockScreen.classList.add('hidden');
+        if (userProfile) userProfile.classList.add('hidden');
+      }
+    }
+
+    function bypassAuthMode(silent = false) {
+      localStorage.setItem('calculatax_bypass_auth', 'true');
+      const lockScreen = document.getElementById('authLockScreen');
+      const userProfile = document.getElementById('userProfileBar');
+      const userBadge = document.getElementById('userEmailBadge');
+
+      if (lockScreen) lockScreen.classList.add('hidden');
+      if (userProfile) userProfile.classList.remove('hidden');
+      if (userBadge) userBadge.innerText = isLocalEnvironment ? 'Mode Lokal' : 'Mode Tamu';
+
+      if (typeof netlifyIdentity !== 'undefined') {
+        try { netlifyIdentity.close(); } catch (e) {}
+      }
+    }
+
+    function handleLogin() {
+      if (isLocalEnvironment) {
+        alert('Fitur login Netlify Identity dirancang untuk website yang sudah live di Netlify.\n\nAplikasi Anda saat ini otomatis dibuka dalam Mode Pengujian Lokal!');
+        bypassAuthMode();
+        return;
+      }
+
+      if (typeof netlifyIdentity !== 'undefined') {
+        netlifyIdentity.open('login');
+      } else {
+        alert('Fitur Netlify Identity belum aktif. Pastikan Netlify Identity sudah diaktifkan di dashboard Netlify.');
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('calculatax_bypass_auth');
+      if (isLocalEnvironment) {
+        const lockScreen = document.getElementById('authLockScreen');
+        const userProfile = document.getElementById('userProfileBar');
+        if (lockScreen) lockScreen.classList.remove('hidden');
+        if (userProfile) userProfile.classList.add('hidden');
+        return;
+      }
+
+      if (typeof netlifyIdentity !== 'undefined') {
+        if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
+          netlifyIdentity.logout();
+        }
+      }
+    }
+
+    // Inisialisasi saat halaman dibuka
+    document.addEventListener('DOMContentLoaded', () => {
+      initAuth();
+      calculate();
+      renderRiwayat();
+      initKalenderPajak();
+
+      // PWA Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').then((reg) => {
+          reg.update();
+        }).catch(() => {});
+      }
+    });
+
+    // PWA Install Prompt Handler
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('btnInstall');
+      btn.classList.remove('hidden');
+      btn.addEventListener('click', () => {
+        btn.classList.add('hidden');
+        deferredPrompt.prompt();
+      });
+    });
+  </script>
+</body>
+</html>
