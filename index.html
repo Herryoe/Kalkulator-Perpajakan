@@ -366,6 +366,12 @@
         </div>
         <div class="flex justify-between pt-1.5 border-t border-slate-800 text-[11px]">
           <span class="text-slate-400 flex items-center space-x-1">
+            <span>🏷️ Kode Objek Pajak (KOP):</span>
+          </span>
+          <span id="resKopCoretax" class="font-mono font-bold text-amber-300">24-104-09</span>
+        </div>
+        <div class="flex justify-between pt-1 text-[11px]">
+          <span class="text-slate-400 flex items-center space-x-1">
             <span>🏛️ Billing Coretax:</span>
           </span>
           <span id="resBillingCoretax" class="font-mono font-bold text-emerald-300">KAP 411124 • KJS 104</span>
@@ -451,13 +457,14 @@
               <label class="block font-medium text-slate-600 mb-1">Jenis Pajak & Tarif:</label>
               <select id="batchSelectJenis"
                 class="w-full px-2.5 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 text-xs bg-white">
-                <option value="pph23_jasa">PPh 23 Jasa (2%) • KAP 411124-104</option>
-                <option value="pph21_ahli">PPh 21 Tenaga Ahli (2,5%) • KAP 411121-100</option>
-                <option value="pph4_sewa">PPh 4(2) Sewa Gedung (10%) • KAP 411128-403</option>
-                <option value="pph4_konstr">PPh 4(2) Konstruksi (1,75%) • KAP 411128-409</option>
-                <option value="ppn_standar">PPN Standar (11%) • KAP 411211-100</option>
-                <option value="ppn_11_12">PPN DPP Nilai Lain 11/12 (11%) • KAP 411211-104</option>
-                <option value="ppn_ekspedisi">PPN Jasa Angkut/Ekspedisi (1,1%) • KAP 411211-104</option>
+                <option value="pph23_jasa">PPh 23 Jasa (2%) • KOP 24-104-09</option>
+                <option value="pph23_sewa">PPh 23 Sewa Harta/Alat (2%) • KOP 24-100-02</option>
+                <option value="pph21_ahli">PPh 21 Tenaga Ahli (2,5%) • KOP 21-100-07</option>
+                <option value="pph4_sewa">PPh 4(2) Sewa Gedung (10%) • KOP 28-403-01</option>
+                <option value="pph4_konstr">PPh 4(2) Konstruksi (1,75%) • KOP 28-409-17</option>
+                <option value="ppn_standar">PPN Standar (11%) • Faktur 010</option>
+                <option value="ppn_11_12">PPN DPP Nilai Lain 11/12 (11%) • Faktur 040</option>
+                <option value="ppn_ekspedisi">PPN Ekspedisi/Angkut (1,1%) • Faktur 040</option>
               </select>
             </div>
 
@@ -744,6 +751,10 @@
               <span id="slipNpwpFaktur" class="font-semibold text-slate-800">Ber-NPWP (Tarif Normal)</span>
             </div>
             <div class="flex justify-between pt-1 border-t border-slate-200/60">
+              <span class="text-slate-500">Kode Objek Pajak (KOP):</span>
+              <span id="slipKopCoretax" class="font-mono font-bold text-amber-800">24-104-09 (Jasa Lainnya)</span>
+            </div>
+            <div class="flex justify-between pt-1">
               <span class="text-slate-500">Kode Billing Coretax:</span>
               <span id="slipBillingCoretax" class="font-mono font-bold text-emerald-800">KAP 411124 • KJS 104</span>
             </div>
@@ -832,35 +843,49 @@
     let rawNominal = 0;
     let ppnRate = 0.11; // 11% (default) or 12%
 
-    // Sub-kategori konfigurasi
+    // Sub-kategori konfigurasi lengkap dengan Kode Objek Pajak (KOP) Coretax
     const subCategories = {
+      pph23: [
+        { id: 'jasa_lain', label: 'Jasa Lainnya (Cleaning, Katering, Keamanan, dll.) (2%) • KOP 24-104-09', kop: '24-104-09', tarif: 0.02, dppRatio: 1.0, kap: '411124', kjs: '104' },
+        { id: 'jasa_teknik', label: 'Jasa Teknik (2%) • KOP 24-104-01', kop: '24-104-01', tarif: 0.02, dppRatio: 1.0, kap: '411124', kjs: '104' },
+        { id: 'jasa_manajemen', label: 'Jasa Manajemen (2%) • KOP 24-104-02', kop: '24-104-02', tarif: 0.02, dppRatio: 1.0, kap: '411124', kjs: '104' },
+        { id: 'jasa_konsultan', label: 'Jasa Konsultan (2%) • KOP 24-104-03', kop: '24-104-03', tarif: 0.02, dppRatio: 1.0, kap: '411124', kjs: '104' },
+        { id: 'sewa_harta', label: 'Sewa Harta/Kendaraan selain Tanah & Bangunan (2%) • KOP 24-100-02', kop: '24-100-02', tarif: 0.02, dppRatio: 1.0, kap: '411124', kjs: '100' },
+        { id: 'royalti', label: 'Royalti Hak Cipta / Paten / Merek (15%) • KOP 24-103-01', kop: '24-103-01', tarif: 0.15, dppRatio: 1.0, kap: '411124', kjs: '103' },
+        { id: 'hadiah_bupot', label: 'Hadiah / Penghargaan / Bonus Badan (15%) • KOP 24-105-01', kop: '24-105-01', tarif: 0.15, dppRatio: 1.0, kap: '411124', kjs: '105' }
+      ],
       pph21: [
-        { id: 'lap1', label: 'Bukan Pegawai / Tenaga Ahli (DPP 50% × Tarif 5%)', tarif: 0.05, dppRatio: 0.5 },
-        { id: 'lap2', label: 'Penghasilan Kumulatif Tinggi (DPP 50% × Tarif 15%)', tarif: 0.15, dppRatio: 0.5 },
-        { id: 'lap3', label: 'Penghasilan Kumulatif Tinggi (DPP 50% × Tarif 25%)', tarif: 0.25, dppRatio: 0.5 }
+        { id: 'ahli_lap1', label: 'Bukan Pegawai / Tenaga Ahli (Tarif 5% × DPP 50%) • KOP 21-100-07', kop: '21-100-07', tarif: 0.05, dppRatio: 0.5, kap: '411121', kjs: '100' },
+        { id: 'ahli_lap2', label: 'Tenaga Ahli - Kumulatif Tinggi (Tarif 15% × DPP 50%) • KOP 21-100-07', kop: '21-100-07', tarif: 0.15, dppRatio: 0.5, kap: '411121', kjs: '100' },
+        { id: 'ahli_lap3', label: 'Tenaga Ahli - Kumulatif Tinggi (Tarif 25% × DPP 50%) • KOP 21-100-07', kop: '21-100-07', tarif: 0.25, dppRatio: 0.5, kap: '411121', kjs: '100' },
+        { id: 'bukan_pegawai_kesinambung', label: 'Bukan Pegawai Berkesinambungan (5% × DPP 50%) • KOP 21-100-08', kop: '21-100-08', tarif: 0.05, dppRatio: 0.5, kap: '411121', kjs: '100' },
+        { id: 'bukan_pegawai_tidak', label: 'Bukan Pegawai Tidak Berkesinambungan (5% × DPP 50%) • KOP 21-100-09', kop: '21-100-09', tarif: 0.05, dppRatio: 0.5, kap: '411121', kjs: '100' },
+        { id: 'peserta_kegiatan', label: 'Peserta Kegiatan / Hadiah Lomba (5% Bruto) • KOP 21-100-11', kop: '21-100-11', tarif: 0.05, dppRatio: 1.0, kap: '411121', kjs: '100' },
+        { id: 'komisaris', label: 'Dewan Komisaris Tanpa Pegawai Tetap (5% Bruto) • KOP 21-100-05', kop: '21-100-05', tarif: 0.05, dppRatio: 1.0, kap: '411121', kjs: '100' }
       ],
       pph4_2: [
-        { id: 'konstr_kecil', label: 'Konstruksi - Kualifikasi Usaha Kecil (1,75%)', tarif: 0.0175, dppRatio: 1.0 },
-        { id: 'konstr_menengah', label: 'Konstruksi - Kualifikasi Menengah / Besar (2,65%)', tarif: 0.0265, dppRatio: 1.0 },
-        { id: 'konstr_none', label: 'Konstruksi - Tanpa Kualifikasi Usaha (4%)', tarif: 0.04, dppRatio: 1.0 },
-        { id: 'konsul_kual', label: 'Konsultansi Konstruksi - Berbadan Usaha (3,5%)', tarif: 0.035, dppRatio: 1.0 },
-        { id: 'konsul_none', label: 'Konsultansi Konstruksi - Tanpa Kualifikasi (6%)', tarif: 0.06, dppRatio: 1.0 },
-        { id: 'sewa_tanah', label: 'Sewa Tanah dan/atau Bangunan (10%)', tarif: 0.10, dppRatio: 1.0 }
+        { id: 'sewa_tanah', label: 'Sewa Tanah dan/atau Bangunan (10%) • KOP 28-403-01', kop: '28-403-01', tarif: 0.10, dppRatio: 1.0, kap: '411128', kjs: '403' },
+        { id: 'konstr_kecil', label: 'Konstruksi - Kualifikasi Usaha Kecil (1,75%) • KOP 28-409-17', kop: '28-409-17', tarif: 0.0175, dppRatio: 1.0, kap: '411128', kjs: '409' },
+        { id: 'konstr_menengah', label: 'Konstruksi - Kualifikasi Menengah / Besar (2,65%) • KOP 28-409-18', kop: '28-409-18', tarif: 0.0265, dppRatio: 1.0, kap: '411128', kjs: '409' },
+        { id: 'konstr_none', label: 'Konstruksi - Tanpa Kualifikasi Usaha (4%) • KOP 28-409-19', kop: '28-409-19', tarif: 0.04, dppRatio: 1.0, kap: '411128', kjs: '409' },
+        { id: 'konsul_kual', label: 'Konsultansi Konstruksi - Berbadan Usaha (3,5%) • KOP 28-409-20', kop: '28-409-20', tarif: 0.035, dppRatio: 1.0, kap: '411128', kjs: '409' },
+        { id: 'konsul_none', label: 'Konsultansi Konstruksi - Tanpa Kualifikasi (6%) • KOP 28-409-21', kop: '28-409-21', tarif: 0.06, dppRatio: 1.0, kap: '411128', kjs: '409' },
+        { id: 'hadiah_undian', label: 'Hadiah Undian (25%) • KOP 28-405-01', kop: '28-405-01', tarif: 0.25, dppRatio: 1.0, kap: '411128', kjs: '405' }
       ],
       ppn: [
-        { id: 'ppn_11_12', label: 'DPP Nilai Lain (11/12) • Tarif 12% Menghasilkan PPN 11%', dppRatio: 11 / 12, forcedRate: 0.12, dasarHukum: 'Formula Penyesuaian (11/12)', kodeFaktur: '040' },
-        { id: 'ppn_perkebunan', label: 'Hasil Perkebunan Tertentu (TBS Sawit, Karet, dll.) [PMK 64/2022] (1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 64/PMK.03/2022', kodeFaktur: '050' },
-        { id: 'ppn_angkut_kebun', label: 'Jasa Angkut Hasil Kebun / Truk Sawit [PMK 71/2022] (DPP 10% → 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040' },
-        { id: 'ppn_ekspedisi', label: 'Jasa Pengiriman Paket / Ekspedisi (DPP 10% → Efektif 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040' },
-        { id: 'ppn_travel', label: 'Biro Perjalanan Wisata / Agen Tur (DPP 10% → Efektif 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040' },
-        { id: 'ppn_freight', label: 'Jasa Pengurusan Transportasi / Freight Forwarding (DPP 10% → Efektif 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040' },
-        { id: 'ppn_mobil_bekas', label: 'Penjualan Kendaraan Bermotor Bekas (DPP 10% → Efektif 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 65/PMK.03/2022', kodeFaktur: '040' },
-        { id: 'ppn_emas_pabrik', label: 'Penjualan Emas Perhiasan - Pabrikan (DPP 10% → Efektif 1,1%)', dppRatio: 0.10, dasarHukum: 'PMK 48/2023', kodeFaktur: '040' },
-        { id: 'ppn_emas_pedagang', label: 'Penjualan Emas Perhiasan - Pedagang (DPP 15% → Efektif 1,65%)', dppRatio: 0.15, dasarHukum: 'PMK 48/2023', kodeFaktur: '040' },
-        { id: 'ppn_cuma_cuma', label: 'Pemakaian Sendiri / Pemberian Cuma-cuma (DPP = HPP/Biaya Pokok)', dppRatio: 1.0, dasarHukum: 'PMK 121/PMK.03/2015', kodeFaktur: '040' },
-        { id: 'ppn_antar_cabang', label: 'Penyerahan Antar Cabang / Pusat-Cabang (DPP = Harga Pokok)', dppRatio: 1.0, dasarHukum: 'PMK 121/PMK.03/2015', kodeFaktur: '040' },
-        { id: 'ppn_custom', label: 'DPP Nilai Lain Kustom (Tentukan Sendiri %)', dppRatio: null, dasarHukum: 'DPP Nilai Lain Tertentu', kodeFaktur: '040' },
-        { id: 'ppn_standar', label: 'PPN Standar / Non-Nilai Lain (DPP Penuh 100%)', dppRatio: 1.0, dasarHukum: 'UU PPN / UU HPP', kodeFaktur: '010' }
+        { id: 'ppn_11_12', label: 'DPP Nilai Lain (11/12) • Tarif 12% Menghasilkan PPN 11%', kop: 'Transaksi 04', dppRatio: 11 / 12, forcedRate: 0.12, dasarHukum: 'Formula Penyesuaian (11/12)', kodeFaktur: '040', kap: '411211', kjs: '104' },
+        { id: 'ppn_perkebunan', label: 'Hasil Perkebunan Tertentu (TBS Sawit, Karet, dll.) [PMK 64/2022] (1,1%)', kop: 'Transaksi 05', dppRatio: 0.10, dasarHukum: 'PMK 64/PMK.03/2022', kodeFaktur: '050', kap: '411211', kjs: '104' },
+        { id: 'ppn_angkut_kebun', label: 'Jasa Angkut Hasil Kebun / Truk Sawit [PMK 71/2022] (DPP 10% → 1,1%)', kop: 'Transaksi 04', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040', kap: '411211', kjs: '104' },
+        { id: 'ppn_ekspedisi', label: 'Jasa Pengiriman Paket / Ekspedisi (DPP 10% → Efektif 1,1%)', kop: 'Transaksi 04', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040', kap: '411211', kjs: '104' },
+        { id: 'ppn_travel', label: 'Biro Perjalanan Wisata / Agen Tur (DPP 10% → Efektif 1,1%)', kop: 'Transaksi 04', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040', kap: '411211', kjs: '104' },
+        { id: 'ppn_freight', label: 'Jasa Pengurusan Transportasi / Freight Forwarding (DPP 10% → Efektif 1,1%)', kop: 'Transaksi 04', dppRatio: 0.10, dasarHukum: 'PMK 71/PMK.03/2022', kodeFaktur: '040', kap: '411211', kjs: '104' },
+        { id: 'ppn_mobil_bekas', label: 'Penjualan Kendaraan Bermotor Bekas (DPP 10% → Efektif 1,1%)', kop: 'Transaksi 04', dppRatio: 0.10, dasarHukum: 'PMK 65/PMK.03/2022', kodeFaktur: '040', kap: '411211', kjs: '104' },
+        { id: 'ppn_emas_pabrik', label: 'Penjualan Emas Perhiasan - Pabrikan (DPP 10% → Efektif 1,1%)', kop: 'Transaksi 04', dppRatio: 0.10, dasarHukum: 'PMK 48/2023', kodeFaktur: '040', kap: '411211', kjs: '104' },
+        { id: 'ppn_emas_pedagang', label: 'Penjualan Emas Perhiasan - Pedagang (DPP 15% → Efektif 1,65%)', kop: 'Transaksi 04', dppRatio: 0.15, dasarHukum: 'PMK 48/2023', kodeFaktur: '040', kap: '411211', kjs: '104' },
+        { id: 'ppn_cuma_cuma', label: 'Pemakaian Sendiri / Pemberian Cuma-cuma (DPP = HPP/Biaya Pokok)', kop: 'Transaksi 04', dppRatio: 1.0, dasarHukum: 'PMK 121/PMK.03/2015', kodeFaktur: '040', kap: '411211', kjs: '104' },
+        { id: 'ppn_antar_cabang', label: 'Penyerahan Antar Cabang / Pusat-Cabang (DPP = Harga Pokok)', kop: 'Transaksi 04', dppRatio: 1.0, dasarHukum: 'PMK 121/PMK.03/2015', kodeFaktur: '040', kap: '411211', kjs: '104' },
+        { id: 'ppn_custom', label: 'DPP Nilai Lain Kustom (Tentukan Sendiri %)', kop: 'Transaksi 04', dppRatio: null, dasarHukum: 'DPP Nilai Lain Tertentu', kodeFaktur: '040', kap: '411211', kjs: '104' },
+        { id: 'ppn_standar', label: 'PPN Standar / Non-Nilai Lain (DPP Penuh 100%)', kop: 'Transaksi 01', dppRatio: 1.0, dasarHukum: 'UU PPN / UU HPP', kodeFaktur: '010', kap: '411211', kjs: '100' }
       ]
     };
 
@@ -901,16 +926,18 @@
         rowKodeFaktur.classList.add('hidden');
 
         if (jenis === 'pph23') {
-          subContainer.classList.add('hidden');
-          document.getElementById('hintNpwp').innerText = 'Tarif standar PPh 23 (2%) vs Non-NPWP (4%)';
+          subContainer.classList.remove('hidden');
+          document.getElementById('subPilihanLabel').innerText = 'Kode Objek Pajak (KOP) PPh 23 Coretax';
+          subSelect.innerHTML = subCategories.pph23.map(opt => `<option value="${opt.id}">${opt.label}</option>`).join('');
+          document.getElementById('hintNpwp').innerText = 'Tarif standar PPh 23 vs Non-NPWP (+100%)';
         } else if (jenis === 'pph21') {
           subContainer.classList.remove('hidden');
-          document.getElementById('subPilihanLabel').innerText = 'Lapisan Tarif PPh 21 (UU HPP)';
+          document.getElementById('subPilihanLabel').innerText = 'Kode Objek Pajak (KOP) PPh 21 e-Bupot';
           subSelect.innerHTML = subCategories.pph21.map(opt => `<option value="${opt.id}">${opt.label}</option>`).join('');
           document.getElementById('hintNpwp').innerText = 'Bukan Pegawai / Tenaga Ahli';
         } else if (jenis === 'pph4_2') {
           subContainer.classList.remove('hidden');
-          document.getElementById('subPilihanLabel').innerText = 'Kategori Jasa PPh Final Ps 4(2)';
+          document.getElementById('subPilihanLabel').innerText = 'Kode Objek Pajak (KOP) PPh 4(2) Final';
           subSelect.innerHTML = subCategories.pph4_2.map(opt => `<option value="${opt.id}">${opt.label}</option>`).join('');
           document.getElementById('hintNpwp').innerText = 'PPh Final (Tarif tetap berlaku)';
         }
@@ -1081,9 +1108,14 @@
         document.getElementById('resDpp').innerText = formatRupiah(dpp, 2);
         document.getElementById('resKodeFaktur').innerText = `${kodeFaktur} • ${dasarHukum}`;
 
-        const kap = '411211';
-        const kjs = (item.id === 'ppn_standar') ? '100' : '104';
+        const kap = item.kap || '411211';
+        const kjs = item.kjs || ((item.id === 'ppn_standar') ? '100' : '104');
         const billingLabel = (item.id === 'ppn_standar') ? 'PPN Masa Normal' : 'PPN DPP Nilai Lain';
+        const kop = item.kop || `Transaksi ${kodeFaktur.slice(0, 2)}`;
+
+        const kopEl = document.getElementById('resKopCoretax');
+        if (kopEl) kopEl.innerText = `${kop} (${kodeFaktur})`;
+
         const billingEl = document.getElementById('resBillingCoretax');
         if (billingEl) billingEl.innerText = `KAP ${kap} • KJS ${kjs} (${billingLabel})`;
 
@@ -1096,6 +1128,7 @@
           dppRatio,
           tarifEfektif,
           tarifDeskripsi: `${item.label}`,
+          kop: `${kop} (${kodeFaktur})`,
           kap,
           kjs,
           billingLabel,
@@ -1127,26 +1160,44 @@
       let tarifPajak = 0.02;
       let dppRatio = 1.0;
       let tarifDeskripsi = '';
+      let kop = '24-104-09';
+      let kap = '411124';
+      let kjs = '104';
+      let billingLabel = 'PPh 23 Jasa';
 
       if (currentJenisPajak === 'pph23') {
+        const item = subCategories.pph23.find(x => x.id === subId) || subCategories.pph23[0];
+        const baseRate = item.tarif;
         if (hasNpwp) {
-          tarifPajak = 0.02; // 2%
-          tarifDeskripsi = 'PPh 23 (2% - Ber-NPWP)';
+          tarifPajak = baseRate;
+          tarifDeskripsi = `${item.label} (Ber-NPWP)`;
         } else {
-          tarifPajak = 0.04; // 4% (+100%)
-          tarifDeskripsi = 'PPh 23 (4% - Tanpa NPWP)';
+          tarifPajak = baseRate * 2; // +100% tanpa NPWP
+          tarifDeskripsi = `${item.label} (Tanpa NPWP: ${(tarifPajak * 100)}%)`;
         }
-        dppRatio = 1.0;
+        dppRatio = item.dppRatio;
+        kop = item.kop;
+        kap = item.kap;
+        kjs = item.kjs;
+        billingLabel = item.id.includes('sewa') ? 'PPh 23 Sewa Harta' : (item.id.includes('royalti') ? 'PPh 23 Royalti' : 'PPh 23 Jasa');
       } else if (currentJenisPajak === 'pph21') {
         const item = subCategories.pph21.find(x => x.id === subId) || subCategories.pph21[0];
         tarifPajak = item.tarif;
         dppRatio = item.dppRatio; // 0.5 (50% dari Bruto)
-        tarifDeskripsi = `PPh 21 (${(tarifPajak*100)}% × DPP 50%)`;
+        tarifDeskripsi = `${item.label}`;
+        kop = item.kop;
+        kap = item.kap;
+        kjs = item.kjs;
+        billingLabel = 'Masa PPh 21';
       } else if (currentJenisPajak === 'pph4_2') {
         const item = subCategories.pph4_2.find(x => x.id === subId) || subCategories.pph4_2[0];
         tarifPajak = item.tarif;
         dppRatio = item.dppRatio;
-        tarifDeskripsi = `PPh 4(2) (${(tarifPajak*100)}% Final)`;
+        tarifDeskripsi = `${item.label}`;
+        kop = item.kop;
+        kap = item.kap;
+        kjs = item.kjs;
+        billingLabel = subId === 'sewa_tanah' ? 'PPh 4(2) Sewa Gedung/Tanah' : (subId === 'hadiah_undian' ? 'PPh 4(2) Hadiah Undian' : 'PPh 4(2) Konstruksi');
       }
 
       const tarifEfektif = tarifPajak * dppRatio;
@@ -1194,28 +1245,8 @@
         labelMode.innerText = 'Nilai Kontrak / Bruto';
       }
 
-      let kap = '411124';
-      let kjs = '104';
-      let billingLabel = 'PPh 23 Jasa';
-
-      if (currentJenisPajak === 'pph23') {
-        kap = '411124';
-        kjs = '104';
-        billingLabel = 'PPh 23 Jasa';
-      } else if (currentJenisPajak === 'pph21') {
-        kap = '411121';
-        kjs = '100';
-        billingLabel = 'Masa PPh 21';
-      } else if (currentJenisPajak === 'pph4_2') {
-        kap = '411128';
-        if (subId === 'sewa_tanah') {
-          kjs = '403';
-          billingLabel = 'PPh 4(2) Sewa Gedung/Tanah';
-        } else {
-          kjs = '409';
-          billingLabel = 'PPh 4(2) Konstruksi';
-        }
-      }
+      const kopEl = document.getElementById('resKopCoretax');
+      if (kopEl) kopEl.innerText = kop;
 
       const billingEl = document.getElementById('resBillingCoretax');
       if (billingEl) billingEl.innerText = `KAP ${kap} • KJS ${kjs} (${billingLabel})`;
@@ -1227,6 +1258,7 @@
         tarifDeskripsi,
         tarifEfektifPersen: (tarifEfektif * 100).toFixed(2) + '%',
         isGrossUp,
+        kop,
         kap,
         kjs,
         billingLabel,
@@ -1250,40 +1282,42 @@
       let text = '';
 
       if (c.isPpn) {
-        text = `📋 *RINGKASAN PERHITUNGAN PPN*
-• Kategori: ${c.subKategoriLabel}
-• Dasar Hukum: ${c.dasarHukum}
-• Kode e-Faktur: ${c.kodeFaktur}
-• Skema Harga: ${c.isInclude ? 'Include PPN (Harga Sudah Termasuk Pajak)' : 'Exclude PPN (Harga Belum Termasuk Pajak)'}
-• Tarif Pokok: ${(c.ppnRate * 100)}% | Tarif Efektif: ${(c.tarifEfektif * 100).toFixed(2)}%
----------------------------------
-• Nilai Input Transaksi: ${formatRupiah(c.rawNominal)}
-• Nilai Pokok Transaksi: ${formatRupiah(c.nilaiPokok, 2)}
-• DPP (Dasar Pengenaan Pajak): ${formatRupiah(c.dpp, 2)}
-• PPN Terutang: ${formatRupiah(c.pph, 2)}
-• *${c.isInclude ? 'Kas Bersih Penjual (Exclude PPN):' : 'Total Tagihan (Include PPN):'}* ${formatRupiah(c.isInclude ? c.netPenjual : c.totalTagihan, 2)}
----------------------------------
-💡 e-Faktur: Rekam DPP sebesar ${formatRupiah(c.dpp, 2)} dengan Kode Faktur ${c.kodeFaktur}
-Dihitung otomatis via Kalkulator Pajak`;
+        text = `📋 *RINGKASAN PERHITUNGAN PPN (STANDAR CORETAX)*\n` +
+          `• Kategori: ${c.subKategoriLabel}\n` +
+          `• Kode Objek / Transaksi: ${c.kop || c.kodeFaktur}\n` +
+          `• Billing Coretax: KAP ${c.kap || '411211'} • KJS ${c.kjs || '104'}\n` +
+          `• Skema: ${c.isInclude ? 'Include PPN (Harga Sudah Termasuk Pajak)' : 'Exclude PPN (Harga Belum Termasuk Pajak)'}\n` +
+          `• Tarif Pokok: ${(c.ppnRate * 100)}% | Tarif Efektif: ${(c.tarifEfektif * 100).toFixed(2)}%\n` +
+          `---------------------------------\n` +
+          `• Nilai Pokok Transaksi: ${formatRupiah(c.nilaiPokok, 2)}\n` +
+          `• DPP (Dasar Pengenaan Pajak): ${formatRupiah(c.dpp, 2)}\n` +
+          `• PPN Terutang: ${formatRupiah(c.pph, 2)}\n` +
+          `• *${c.isInclude ? 'Kas Bersih Penjual (Exclude PPN):' : 'Total Tagihan (Include PPN):'}* ${formatRupiah(c.isInclude ? c.netPenjual : c.totalTagihan, 2)}\n` +
+          `---------------------------------\n` +
+          `💡 Rekam Faktur Pajak dengan DPP ${formatRupiah(c.dpp, 2)} di Portal Coretax DJP.\n` +
+          `Dihitung otomatis via CalculaTAX PWA`;
       } else {
-        text = `📋 *RINGKASAN PERHITUNGAN PPh JASA*
-• Jenis Pajak: ${c.jenis} (${c.tarifDeskripsi})
-• Skema: ${c.isGrossUp ? 'Gross-Up (Pajak Ditanggung)' : 'Non Gross-Up (Potong Vendor)'}
----------------------------------
-• Nilai Kontrak/Input: ${formatRupiah(c.rawNominal)}
-• Nilai Bruto SPT: ${formatRupiah(c.brutoFinal)}
-• Dasar Pengenaan (DPP): ${formatRupiah(c.dpp)}
-• Potongan PPh: ${formatRupiah(c.pph)}
-• *Kas Ditransfer ke Vendor:* ${formatRupiah(c.netVendor)}
-• Total Beban Perusahaan: ${formatRupiah(c.bebanPerusahaan)}
----------------------------------
-Dihitung otomatis via Kalkulator Pajak`;
+        text = `📋 *RINGKASAN PERHITUNGAN ${c.jenis} (STANDAR CORETAX)*\n` +
+          `• Jenis Pajak: ${c.jenis} (${c.tarifDeskripsi})\n` +
+          `• Kode Objek Pajak (KOP): ${c.kop || '-'}\n` +
+          `• Billing Coretax: KAP ${c.kap} • KJS ${c.kjs} (${c.billingLabel})\n` +
+          `• Skema: ${c.isGrossUp ? 'Gross-Up (Pajak Ditanggung)' : 'Non Gross-Up (Potong Vendor)'}\n` +
+          `---------------------------------\n` +
+          `• Nilai Kontrak/Input: ${formatRupiah(c.rawNominal)}\n` +
+          `• Nilai Bruto SPT: ${formatRupiah(c.brutoFinal)}\n` +
+          `• Dasar Pengenaan (DPP): ${formatRupiah(c.dpp)}\n` +
+          `• Potongan PPh: ${formatRupiah(c.pph)}\n` +
+          `• *Kas Ditransfer ke Vendor:* ${formatRupiah(c.netVendor)}\n` +
+          `• Total Beban Perusahaan: ${formatRupiah(c.bebanPerusahaan)}\n` +
+          `---------------------------------\n` +
+          `💡 Rekam Bukti Potong di e-Bupot Coretax dengan KOP ${c.kop || '-'}.\n` +
+          `Dihitung otomatis via CalculaTAX PWA`;
       }
 
       navigator.clipboard.writeText(text).then(() => {
         const btnText = document.getElementById('btnCopyText');
         btnText.innerText = 'Tersalin!';
-        setTimeout(() => { btnText.innerText = 'Salin Hasil'; }, 2000);
+        setTimeout(() => { btnText.innerText = 'Salin Teks'; }, 2000);
       });
     }
 
@@ -1323,10 +1357,13 @@ Dihitung otomatis via Kalkulator Pajak`;
             <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
               <div class="flex items-center justify-between">
                 <div>
-                  <div class="font-bold text-slate-800 text-[11px] flex items-center space-x-1.5">
+                  <div class="font-bold text-slate-800 text-[11px] flex items-center space-x-1.5 flex-wrap gap-y-1">
                     <span class="text-indigo-600 font-extrabold">PPN</span>
                     <span class="text-[10px] px-1.5 py-0.2 rounded font-normal bg-indigo-100 text-indigo-800">
                       ${badgeMode} • DPP ${dppPct}%
+                    </span>
+                    <span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold bg-amber-100 text-amber-800">
+                      ${item.kop || item.kodeFaktur || 'PPN'}
                     </span>
                     <span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold bg-slate-200 text-slate-700">
                       ${item.kap || '411211'}-${item.kjs || '104'}
@@ -1359,10 +1396,13 @@ Dihitung otomatis via Kalkulator Pajak`;
           <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
             <div class="flex items-center justify-between">
               <div>
-                <div class="font-bold text-slate-800 text-[11px] flex items-center space-x-1.5">
+                <div class="font-bold text-slate-800 text-[11px] flex items-center space-x-1.5 flex-wrap gap-y-1">
                   <span>${item.jenis}</span>
                   <span class="text-[10px] px-1.5 py-0.2 rounded font-normal ${item.isGrossUp ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
                     ${item.isGrossUp ? 'Gross-Up' : 'Potong'}
+                  </span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold bg-amber-100 text-amber-800">
+                    KOP ${item.kop || '-'}
                   </span>
                   <span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold bg-slate-200 text-slate-700">
                     ${item.kap || '411124'}-${item.kjs || '104'}
@@ -1412,6 +1452,7 @@ Dihitung otomatis via Kalkulator Pajak`;
         'ID Referensi',
         'Jenis Pajak',
         'Kategori / Deskripsi Objek',
+        'Kode Objek Pajak (KOP)',
         'Skema Transaksi',
         'KAP Coretax',
         'KJS Coretax',
@@ -1429,6 +1470,7 @@ Dihitung otomatis via Kalkulator Pajak`;
         const tgl = item.tanggal || '-';
         const jenis = item.jenis || 'PPh';
         const kategori = (item.subKategoriLabel || item.tarifDeskripsi || '-').replace(/"/g, '""');
+        const kop = item.kop || (isPpn ? (item.kodeFaktur || '010') : '-');
         const skema = isPpn 
           ? (item.isInclude ? 'Include PPN' : 'Exclude PPN')
           : (item.isGrossUp ? 'Gross-Up' : 'Non Gross-Up');
@@ -1447,6 +1489,7 @@ Dihitung otomatis via Kalkulator Pajak`;
           `"${refId}"`,
           `"${jenis}"`,
           `"${kategori}"`,
+          `"${kop}"`,
           `"${skema}"`,
           `"${kap}"`,
           `"${kjs}"`,
@@ -1525,6 +1568,7 @@ Dihitung otomatis via Kalkulator Pajak`;
       let beban = 0;
       let tarifStr = '';
       let jenisLabel = '';
+      let kop = '24-104-09';
       let kap = '411124';
       let kjs = '104';
 
@@ -1533,8 +1577,28 @@ Dihitung otomatis via Kalkulator Pajak`;
       if (jenis === 'pph23_jasa') {
         jenisLabel = 'PPh 23 Jasa (2%)';
         tarifStr = '2,00%';
+        kop = '24-104-09';
         kap = '411124';
         kjs = '104';
+        const tarif = 0.02;
+        if (isGrossUp) {
+          const bruto = nominal / (1 - tarif);
+          dpp = bruto;
+          pajak = dpp * tarif;
+          kasVendor = nominal;
+          beban = bruto;
+        } else {
+          dpp = nominal;
+          pajak = dpp * tarif;
+          kasVendor = nominal - pajak;
+          beban = nominal;
+        }
+      } else if (jenis === 'pph23_sewa') {
+        jenisLabel = 'PPh 23 Sewa Harta/Alat (2%)';
+        tarifStr = '2,00%';
+        kop = '24-100-02';
+        kap = '411124';
+        kjs = '100';
         const tarif = 0.02;
         if (isGrossUp) {
           const bruto = nominal / (1 - tarif);
@@ -1551,6 +1615,7 @@ Dihitung otomatis via Kalkulator Pajak`;
       } else if (jenis === 'pph21_ahli') {
         jenisLabel = 'PPh 21 Tenaga Ahli (2,5%)';
         tarifStr = '2,50% (5% × DPP 50%)';
+        kop = '21-100-07';
         kap = '411121';
         kjs = '100';
         const tarifEfektif = 0.025;
@@ -1569,6 +1634,7 @@ Dihitung otomatis via Kalkulator Pajak`;
       } else if (jenis === 'pph4_sewa') {
         jenisLabel = 'PPh 4(2) Sewa Gedung (10%)';
         tarifStr = '10,00%';
+        kop = '28-403-01';
         kap = '411128';
         kjs = '403';
         const tarif = 0.10;
@@ -1587,6 +1653,7 @@ Dihitung otomatis via Kalkulator Pajak`;
       } else if (jenis === 'pph4_konstr') {
         jenisLabel = 'PPh 4(2) Konstruksi (1,75%)';
         tarifStr = '1,75%';
+        kop = '28-409-17';
         kap = '411128';
         kjs = '409';
         const tarif = 0.0175;
@@ -1605,6 +1672,7 @@ Dihitung otomatis via Kalkulator Pajak`;
       } else if (jenis === 'ppn_standar') {
         jenisLabel = 'PPN Standar (11%)';
         tarifStr = '11,00%';
+        kop = 'Faktur 010';
         kap = '411211';
         kjs = '100';
         const tarif = 0.11;
@@ -1623,6 +1691,7 @@ Dihitung otomatis via Kalkulator Pajak`;
       } else if (jenis === 'ppn_11_12') {
         jenisLabel = 'PPN DPP Nilai Lain 11/12 (11%)';
         tarifStr = '12% × 11/12 = 11%';
+        kop = 'Faktur 040';
         kap = '411211';
         kjs = '104';
         const tarifEfektif = 0.11;
@@ -1641,6 +1710,7 @@ Dihitung otomatis via Kalkulator Pajak`;
       } else if (jenis === 'ppn_ekspedisi') {
         jenisLabel = 'PPN Ekspedisi / Truk Sawit (1,1%)';
         tarifStr = '1,10% (DPP 10% × 11%)';
+        kop = 'Faktur 040';
         kap = '411211';
         kjs = '104';
         const tarifEfektif = 0.011;
@@ -1665,6 +1735,7 @@ Dihitung otomatis via Kalkulator Pajak`;
         beban: Number(beban.toFixed(2)),
         tarifStr,
         jenisLabel,
+        kop,
         kap,
         kjs
       };
@@ -1773,12 +1844,15 @@ Dihitung otomatis via Kalkulator Pajak`;
           <div class="flex items-start justify-between">
             <div>
               <div class="font-extrabold text-slate-800 text-xs">${item.vendor}</div>
-              <div class="flex items-center space-x-1.5 mt-0.5">
+              <div class="flex items-center space-x-1.5 mt-0.5 flex-wrap gap-y-1">
                 <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.2 rounded">
                   ${item.jenisLabel}
                 </span>
                 <span class="text-[10px] font-semibold text-slate-600 bg-slate-200/70 px-1.5 py-0.2 rounded">
                   ${item.skema === 'grossup' ? 'Gross-Up' : 'Potong'}
+                </span>
+                <span class="text-[9px] font-mono font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">
+                  KOP ${item.kop || '-'}
                 </span>
                 <span class="text-[9px] font-mono font-bold text-slate-600 bg-slate-200/80 px-1.5 py-0.2 rounded">
                   KAP ${item.kap} • KJS ${item.kjs}
@@ -1824,6 +1898,7 @@ Dihitung otomatis via Kalkulator Pajak`;
         'No',
         'Nama Vendor / Keterangan Tagihan',
         'Jenis Pajak',
+        'Kode Objek Pajak (KOP)',
         'Skema',
         'KAP Coretax',
         'KJS Coretax',
@@ -1838,12 +1913,14 @@ Dihitung otomatis via Kalkulator Pajak`;
       const rows = batchItems.map((item, idx) => {
         const v = `"${item.vendor.replace(/"/g, '""')}"`;
         const j = `"${item.jenisLabel}"`;
+        const kop = `"${item.kop || '-'}"`;
         const s = item.skema === 'grossup' ? 'Gross-Up' : 'Non Gross-Up';
         const t = `"${item.tarifStr}"`;
         return [
           idx + 1,
           v,
           j,
+          kop,
           s,
           `"${item.kap}"`,
           `"${item.kjs}"`,
@@ -2235,6 +2312,10 @@ Dihitung otomatis via Kalkulator Pajak`;
         const kap = data.kap || '411211';
         const kjs = data.kjs || (data.subKategoriLabel && data.subKategoriLabel.includes('DPP Nilai Lain') ? '104' : '100');
         const billingLabel = data.billingLabel || 'PPN Dalam Negeri';
+        
+        const slipKop = document.getElementById('slipKopCoretax');
+        if (slipKop) slipKop.innerText = `${data.kop || ('Faktur ' + (data.kodeFaktur || '040'))}`;
+
         const slipBilling = document.getElementById('slipBillingCoretax');
         if (slipBilling) slipBilling.innerText = `KAP ${kap} • KJS ${kjs} (${billingLabel})`;
 
@@ -2256,7 +2337,7 @@ Dihitung otomatis via Kalkulator Pajak`;
         if (lblBeban) lblBeban.innerText = 'Nilai Pokok Sebelum Pajak:';
         document.getElementById('slipValBeban').innerText = formatRupiah(data.nilaiPokok, 2);
 
-        document.getElementById('slipCatatan').innerText = `Rekam Faktur Pajak dengan DPP sebesar ${formatRupiah(data.dpp, 2)} dan Kode Transaksi ${data.kodeFaktur} di Portal Coretax DJP. Setorkan PPN Kurang Bayar via Kode Billing (KAP ${kap} • KJS ${kjs}) atau Akun Deposit Pajak, dan laporkan SPT Masa PPN paling lambat akhir bulan berikutnya via Portal Coretax DJP (PMK 81/2024).`;
+        document.getElementById('slipCatatan').innerText = `Rekam Faktur Pajak dengan DPP sebesar ${formatRupiah(data.dpp, 2)}, Kode Objek/Transaksi ${data.kop || data.kodeFaktur} di Portal Coretax DJP. Setorkan PPN Kurang Bayar via Kode Billing (KAP ${kap} • KJS ${kjs}) atau Akun Deposit Pajak, dan laporkan SPT Masa PPN paling lambat akhir bulan berikutnya via Portal Coretax DJP (PMK 81/2024).`;
       } else {
         document.getElementById('slipTaxCategoryTitle').innerText = `SLIP MEMO PERHITUNGAN ${data.jenis}`;
         document.getElementById('slipSubInfo').innerText = `${data.tarifDeskripsi} • ${data.isGrossUp ? 'Gross-Up' : 'Non Gross-Up'}`;
@@ -2271,6 +2352,10 @@ Dihitung otomatis via Kalkulator Pajak`;
         const kap = data.kap || (data.jenis && data.jenis.includes('23') ? '411124' : (data.jenis && data.jenis.includes('21') ? '411121' : '411128'));
         const kjs = data.kjs || (data.jenis && data.jenis.includes('23') ? '104' : '100');
         const billingLabel = data.billingLabel || 'Coretax Billing';
+
+        const slipKop = document.getElementById('slipKopCoretax');
+        if (slipKop) slipKop.innerText = `${data.kop || '24-104-09'}`;
+
         const slipBilling = document.getElementById('slipBillingCoretax');
         if (slipBilling) slipBilling.innerText = `KAP ${kap} • KJS ${kjs} (${billingLabel})`;
 
@@ -2292,7 +2377,7 @@ Dihitung otomatis via Kalkulator Pajak`;
         if (lblBeban) lblBeban.innerText = 'Total Beban Biaya Perusahaan:';
         document.getElementById('slipValBeban').innerText = formatRupiah(data.bebanPerusahaan, 2);
 
-        document.getElementById('slipCatatan').innerText = `Setorkan potongan pajak sebesar ${formatRupiah(data.pph, 2)} menggunakan Akun Deposit Pajak atau Kode Billing Coretax DJP (KAP ${kap} • KJS ${kjs}) paling lambat tanggal 15 bulan berikutnya, dan laporkan pada SPT Masa via Portal Coretax DJP paling lambat tanggal 20 bulan berikutnya (PMK 81/2024).`;
+        document.getElementById('slipCatatan').innerText = `Buat Bukti Pemotongan (Bupot) di Portal Coretax DJP menggunakan Kode Objek Pajak (KOP): ${data.kop || '-'}. Setorkan potongan pajak sebesar ${formatRupiah(data.pph, 2)} menggunakan Akun Deposit Pajak atau Kode Billing Coretax DJP (KAP ${kap} • KJS ${kjs}) paling lambat tanggal 15 bulan berikutnya, dan laporkan pada SPT Masa via Portal Coretax DJP paling lambat tanggal 20 bulan berikutnya (PMK 81/2024).`;
       }
     }
 
@@ -2402,7 +2487,7 @@ Dihitung otomatis via Kalkulator Pajak`;
         text = `*SLIP MEMO PERHITUNGAN PPN (STANDAR CORETAX)*\n` +
           `Ref: CTX-${d.id ? String(d.id).slice(-6) : 'ONLINE'}\n` +
           `Kategori: ${d.subKategoriLabel || 'PPN'}\n` +
-          `Kode Transaksi: ${d.kodeFaktur || '040'} (${d.dasarHukum || 'DPP Nilai Lain'})\n` +
+          `Kode Objek / Transaksi: ${d.kop || d.kodeFaktur || '040'}\n` +
           `Billing Coretax: KAP ${d.kap || '411211'} • KJS ${d.kjs || '104'}\n` +
           `---------------------------------\n` +
           `• Nilai Pokok Transaksi: ${formatRupiah(d.nilaiPokok, 2)}\n` +
@@ -2417,6 +2502,7 @@ Dihitung otomatis via Kalkulator Pajak`;
         text = `*SLIP MEMO PERHITUNGAN ${d.jenis} (STANDAR CORETAX)*\n` +
           `Ref: CTX-${d.id ? String(d.id).slice(-6) : 'ONLINE'}\n` +
           `Skema: ${d.isGrossUp ? 'Gross-Up' : 'Non Gross-Up'} (${d.tarifDeskripsi})\n` +
+          `Kode Objek Pajak (KOP): ${d.kop || '-'}\n` +
           `Billing Coretax: KAP ${d.kap || '411124'} • KJS ${d.kjs || '104'}\n` +
           `---------------------------------\n` +
           `• Nilai Kontrak / Input: ${formatRupiah(d.rawNominal, 2)}\n` +
@@ -2555,7 +2641,7 @@ Dihitung otomatis via Kalkulator Pajak`;
     // Inisialisasi saat halaman dibuka
     document.addEventListener('DOMContentLoaded', () => {
       initAuth();
-      calculate();
+      setJenisPajak('pph23');
       renderRiwayat();
       initKalenderPajak();
       renderBatchList();
