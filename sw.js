@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pph-calculator-v7';
+const CACHE_NAME = 'pph-calculator-v11';
 const ASSETS = [
   './',
   './index.html',
