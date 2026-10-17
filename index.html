@@ -49,16 +49,23 @@
         visibility: visible !important;
       }
       #printableSlipModal {
-        position: fixed !important;
-        left: 0 !important;
-        top: 0 !important;
+        position: static !important;
         width: 100% !important;
+        max-width: 100% !important;
         height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
         margin: 0 !important;
-        padding: 10px !important;
+        padding: 0 !important;
         background: white !important;
         color: black !important;
-        z-index: 99999 !important;
+        box-shadow: none !important;
+      }
+      #slipScrollArea {
+        overflow: visible !important;
+        max-height: none !important;
+        padding: 0 !important;
+        background: white !important;
       }
       .no-print {
         display: none !important;
@@ -431,7 +438,7 @@
           </button>
           <div class="text-center">
             <h2 id="judulBulanTahunKalender" class="text-sm font-bold text-slate-800">Oktober 2026</h2>
-            <p class="text-[10px] text-slate-400">Kalender Batas Waktu DJP</p>
+            <p class="text-[10px] text-emerald-600 font-semibold">Coretax DJP • PMK 81/2024</p>
           </div>
           <button type="button" onclick="gantiBulanKalender(1)" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -439,18 +446,18 @@
         </div>
 
         <!-- Legenda Warna -->
-        <div class="flex items-center justify-between text-[11px] px-1 text-slate-500">
+        <div class="flex items-center justify-between text-[11px] px-1 text-slate-500 font-medium">
           <span class="flex items-center space-x-1">
             <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
-            <span>Setor PPh</span>
+            <span>Tgl 15: Setor PPh</span>
           </span>
           <span class="flex items-center space-x-1">
             <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
-            <span>Lapor SPT</span>
+            <span>Tgl 20: Lapor PPh</span>
           </span>
           <span class="flex items-center space-x-1">
             <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
-            <span>PPN</span>
+            <span>Akhir Bln: PPN</span>
           </span>
         </div>
 
@@ -462,7 +469,7 @@
         <!-- Box Keterangan Tanggal Terpilih -->
         <div id="boxDetailTanggal" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
           <div class="flex items-center justify-between">
-            <span id="detTglJudul" class="font-bold text-slate-800 text-xs">Tanggal 10</span>
+            <span id="detTglJudul" class="font-bold text-slate-800 text-xs">Tanggal 15</span>
             <span id="detTglBadge" class="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-100 text-amber-800">Setor PPh</span>
           </div>
           <p id="detTglDeskripsi" class="text-xs text-slate-600">Keterangan kewajiban perpajakan...</p>
@@ -473,7 +480,7 @@
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 space-y-3">
         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center justify-between">
           <span>Agenda Pajak Bulan Ini</span>
-          <span class="text-[10px] text-emerald-600 font-semibold">Resmi DJP</span>
+          <span class="text-[10px] text-emerald-600 font-semibold">Coretax PMK 81/2024</span>
         </h3>
 
         <div id="listAgendaPajak" class="space-y-2.5 text-xs">
@@ -549,7 +556,7 @@
               </div>
               <div>
                 <h2 class="font-extrabold text-sm text-slate-900 leading-tight">CalculaTAX</h2>
-                <p class="text-[10px] text-slate-500 font-medium">Kalkulator Perpajakan Resmi</p>
+                <p class="text-[10px] text-slate-500 font-medium">Kalkulator Perpajakan Resmi • Coretax Ready</p>
               </div>
             </div>
             <div class="text-right text-[10px] text-slate-500">
@@ -577,11 +584,11 @@
               <span id="slipSkema" class="font-semibold text-slate-800">Non Gross-Up (Potong Vendor)</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-slate-500">Tarif Efektif:</span>
+              <span class="text-slate-500">Tarif Pajak Efektif:</span>
               <span id="slipTarif" class="font-semibold text-slate-800">2,00%</span>
             </div>
             <div id="slipRowNpwpFaktur" class="flex justify-between">
-              <span class="text-slate-500" id="slipLblNpwpFaktur">Status NPWP:</span>
+              <span class="text-slate-500" id="slipLblNpwpFaktur">Status Transaksi:</span>
               <span id="slipNpwpFaktur" class="font-semibold text-slate-800">Ber-NPWP (Tarif Normal)</span>
             </div>
           </div>
@@ -589,47 +596,51 @@
           <!-- Tabel Rincian Nilai -->
           <div class="border border-slate-200 rounded-xl overflow-hidden text-xs">
             <div class="bg-slate-100 font-semibold px-3 py-2 text-slate-700 flex justify-between border-b border-slate-200">
-              <span>Keterangan Komponen</span>
+              <span>Keterangan Komponen Perhitungan</span>
               <span>Jumlah (IDR)</span>
             </div>
             <div class="p-3 space-y-2">
-              <div class="flex justify-between">
-                <span class="text-slate-600" id="slipLblKontrak">Nilai Kontrak / Input:</span>
-                <span id="slipValKontrak" class="font-medium text-slate-900">Rp 0,00</span>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-600 font-medium" id="slipLblKontrak">Nilai Kontrak / Input:</span>
+                <span id="slipValKontrak" class="font-semibold text-slate-900">Rp 0,00</span>
               </div>
-              <div class="flex justify-between">
-                <span class="text-slate-600">Dasar Pengenaan Pajak (DPP):</span>
-                <span id="slipValDpp" class="font-medium text-slate-900">Rp 0,00</span>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-600 font-medium">Dasar Pengenaan Pajak (DPP):</span>
+                <span id="slipValDpp" class="font-semibold text-slate-900">Rp 0,00</span>
               </div>
-              <div class="flex justify-between text-amber-700 font-semibold">
+              <div class="flex justify-between items-center" id="slipRowTarifTabel">
+                <span class="text-slate-600 font-medium" id="slipLblTarifTabel">Tarif Efektif Dikenakan:</span>
+                <span id="slipValTarifTabel" class="font-semibold text-slate-900">2,00%</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-2 bg-amber-50 rounded-lg border border-amber-200/80 font-bold text-amber-900">
                 <span id="slipLblPajak">Potongan PPh:</span>
-                <span id="slipValPajak">Rp 0,00</span>
+                <span id="slipValPajak" class="text-amber-800">Rp 0,00</span>
               </div>
-              <div class="pt-2 border-t border-slate-200 flex justify-between font-extrabold text-sm text-emerald-700">
+              <div class="flex justify-between items-center py-1.5 px-2 bg-emerald-50 rounded-lg border border-emerald-200 font-extrabold text-emerald-950 text-xs">
                 <span id="slipLblUtama">Kas Ditransfer ke Vendor:</span>
-                <span id="slipValUtama">Rp 0,00</span>
+                <span id="slipValUtama" class="text-emerald-700 text-sm">Rp 0,00</span>
               </div>
-              <div class="flex justify-between text-slate-500 text-[11px] pt-1">
-                <span>Total Beban Perusahaan:</span>
+              <div class="flex justify-between items-center pt-1 text-slate-500 text-[11px]">
+                <span id="slipLblBeban">Total Beban Perusahaan:</span>
                 <span id="slipValBeban" class="font-semibold text-slate-700">Rp 0,00</span>
               </div>
             </div>
           </div>
 
-          <!-- Petunjuk & Catatan Perpajakan -->
+          <!-- Petunjuk & Catatan Perpajakan Coretax -->
           <div class="p-3 bg-emerald-50/60 rounded-xl border border-emerald-100 text-[11px] text-emerald-950 space-y-1">
             <div class="font-bold text-emerald-800 flex items-center space-x-1">
               <span>💡</span>
-              <span>Petunjuk Administrasi & Pembayaran:</span>
+              <span>Petunjuk Administrasi & Pembayaran (Coretax DJP):</span>
             </div>
             <p id="slipCatatan" class="leading-relaxed text-slate-700">
-              Setorkan potongan pajak ke kas negara menggunakan kode billing dan laporkan pada SPT Masa terkait sebelum batas waktu.
+              Setorkan potongan pajak ke kas negara menggunakan Akun Deposit Pajak atau Kode Billing Coretax DJP dan laporkan pada SPT Masa via Portal Coretax DJP sebelum batas waktu.
             </p>
           </div>
 
           <!-- Slip Footer -->
           <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[9px] text-slate-400">
-            <span>Dihitung via CalculaTAX PWA</span>
+            <span>Dihitung via CalculaTAX PWA • Standar Coretax PMK 81/2024</span>
             <span>Dokumen Memo Otomatis</span>
           </div>
 
@@ -1249,11 +1260,14 @@ Dihitung otomatis via Kalkulator Pajak`;
 
       const lastDayCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
+      // Aturan Coretax DJP (PMK 81/2024):
+      // - Tgl 15: Penyetoran seluruh PPh Masa (PPh 21, 23, 4(2), 25, Final UMKM) diseragamkan
+      // - Tgl 20: Pelaporan SPT Masa PPh (Unifikasi & 21/26) via Portal Coretax DJP
+      // - Akhir Bulan: Penyetoran PPN Kurang Bayar & Pelaporan SPT Masa PPN via Portal Coretax DJP
       const targets = [
-        { day: 10, title: 'Batas Setor PPh Potput (PPh 21, 23, 4 ayat 2)' },
-        { day: 15, title: 'Batas Setor PPh Sendiri (PPh 25 & Final UMKM)' },
-        { day: 20, title: 'Batas Lapor SPT Masa Unifikasi & PPh 21' },
-        { day: lastDayCurrentMonth, title: 'Batas Akhir Setor & Lapor SPT Masa PPN' }
+        { day: 15, title: 'Batas Setor Seluruh PPh Masa (Coretax PMK 81/2024)', desc: 'PPh 21/26, 23, 4(2), 25, Final UMKM via Deposit/Billing Coretax' },
+        { day: 20, title: 'Batas Lapor SPT Masa PPh (Portal Coretax DJP)', desc: 'SPT Masa PPh Unifikasi & SPT Masa PPh 21/26' },
+        { day: lastDayCurrentMonth, title: 'Batas Akhir Setor & Lapor SPT Masa PPN (Portal Coretax)', desc: 'Setor PPN Terutang & Lapor SPT Masa PPN' }
       ];
 
       let targetTerdekat = null;
@@ -1268,8 +1282,9 @@ Dihitung otomatis via Kalkulator Pajak`;
       }
 
       if (!targetTerdekat) {
+        // Jika sudah lewat akhir bulan, target berikutnya adalah tgl 15 bulan berikutnya
         targetTerdekat = targets[0];
-        targetDate = new Date(currentYear, currentMonth + 1, 10);
+        targetDate = new Date(currentYear, currentMonth + 1, 15);
       }
 
       const tNow = new Date(currentYear, currentMonth, currentDay).getTime();
@@ -1292,7 +1307,7 @@ Dihitung otomatis via Kalkulator Pajak`;
       }
 
       judulEl.innerText = targetTerdekat.title;
-      tglEl.innerHTML = `Batas Waktu: <strong>${targetDate.getDate()} ${namaBulanIndo[targetDate.getMonth()]} ${targetDate.getFullYear()}</strong>`;
+      tglEl.innerHTML = `Batas Waktu: <strong>${targetDate.getDate()} ${namaBulanIndo[targetDate.getMonth()]} ${targetDate.getFullYear()}</strong> • ${targetTerdekat.desc}`;
     }
 
     function renderKalenderBulan() {
@@ -1336,10 +1351,7 @@ Dihitung otomatis via Kalkulator Pajak`;
         let cellClass = 'py-2 rounded-xl relative cursor-pointer font-medium transition text-slate-700 hover:bg-slate-100 ';
         let dot = '';
 
-        if (d === 10) {
-          cellClass = 'py-2 rounded-xl relative cursor-pointer font-bold bg-amber-500/15 text-amber-700 ring-1 ring-amber-500/40 hover:bg-amber-500/25 ';
-          dot = '<span class="w-1.5 h-1.5 bg-amber-500 rounded-full absolute bottom-1 left-1/2 -translate-x-1/2"></span>';
-        } else if (d === 15) {
+        if (d === 15) {
           cellClass = 'py-2 rounded-xl relative cursor-pointer font-bold bg-amber-500/15 text-amber-700 ring-1 ring-amber-500/40 hover:bg-amber-500/25 ';
           dot = '<span class="w-1.5 h-1.5 bg-amber-500 rounded-full absolute bottom-1 left-1/2 -translate-x-1/2"></span>';
         } else if (d === 20) {
@@ -1371,29 +1383,29 @@ Dihitung otomatis via Kalkulator Pajak`;
 
       if (day === 10) {
         judul.innerText = `Tanggal 10 ${namaBulanIndo[kalenderBulan]}`;
-        badge.innerText = 'Batas Setor PPh';
-        badge.className = 'text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-100 text-amber-800';
-        deskripsi.innerText = 'Batas akhir penyetoran PPh yang dipotong/dipungut oleh pemotong (PPh 21, PPh 23, PPh 4 ayat 2, PPh 22) masa pajak sebelumnya via kode e-Billing.';
+        badge.innerText = 'Aturan Lama (Telah Dihapus)';
+        badge.className = 'text-[10px] px-1.5 py-0.5 rounded font-semibold bg-slate-200 text-slate-700';
+        deskripsi.innerText = 'Mulai era Coretax (PMK 81/2024), batas setor tanggal 10 untuk PPh Pemotongan (PPh 21, 23, 4 ayat 2, 22) telah dihapus dan diseragamkan menjadi tanggal 15 bulan berikutnya.';
       } else if (day === 15) {
         judul.innerText = `Tanggal 15 ${namaBulanIndo[kalenderBulan]}`;
-        badge.innerText = 'Setor PPh Sendiri';
+        badge.innerText = 'Batas Setor Seluruh PPh Masa';
         badge.className = 'text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-100 text-amber-800';
-        deskripsi.innerText = 'Batas akhir pembayaran PPh yang dibayar sendiri oleh Wajib Pajak (PPh Pasal 25 Angsuran Bulanan & PPh Final UMKM 0,5% PP 55/2022).';
+        deskripsi.innerText = 'Batas akhir penyetoran SELURUH PPh Masa (PPh 21, PPh 23, PPh 4 ayat 2, PPh 15, PPh 25, dan PPh Final UMKM PP 55/2022) masa pajak sebelumnya ke kas negara via Akun Deposit Pajak atau Kode Billing Coretax DJP (PMK 81/2024).';
       } else if (day === 20) {
         judul.innerText = `Tanggal 20 ${namaBulanIndo[kalenderBulan]}`;
-        badge.innerText = 'Batas Lapor SPT';
+        badge.innerText = 'Batas Lapor SPT Masa PPh';
         badge.className = 'text-[10px] px-1.5 py-0.5 rounded font-semibold bg-blue-100 text-blue-800';
-        deskripsi.innerText = 'Batas akhir pelaporan SPT Masa PPh Unifikasi (PPh 23, 4 ayat 2, 22, 15, 26) dan SPT Masa PPh Pasal 21/26 masa pajak sebelumnya.';
+        deskripsi.innerText = 'Batas akhir pelaporan SPT Masa PPh Unifikasi (PPh 23, 4 ayat 2, 22, 15, 26) dan SPT Masa PPh Pasal 21/26 masa pajak sebelumnya secara langsung di Portal Coretax DJP.';
       } else if (day === totalDays) {
         judul.innerText = `Tanggal ${totalDays} ${namaBulanIndo[kalenderBulan]}`;
-        badge.innerText = 'Batas PPN';
+        badge.innerText = 'Batas Setor & Lapor PPN';
         badge.className = 'text-[10px] px-1.5 py-0.5 rounded font-semibold bg-red-100 text-red-800';
-        deskripsi.innerText = 'Batas akhir pembayaran PPN Kurang Bayar dan pelaporan SPT Masa PPN 1111 untuk masa pajak sebelumnya via web-efaktur DJP.';
+        deskripsi.innerText = 'Batas akhir pembayaran PPN Kurang Bayar dan pelaporan SPT Masa PPN untuk masa pajak sebelumnya langsung via Portal Coretax DJP (menggantikan aplikasi web-efaktur lama).';
       } else {
         judul.innerText = `Tanggal ${day} ${namaBulanIndo[kalenderBulan]}`;
-        badge.innerText = 'Hari Kerja Normal';
+        badge.innerText = 'Hari Kerja Rutin';
         badge.className = 'text-[10px] px-1.5 py-0.5 rounded font-semibold bg-slate-200 text-slate-700';
-        deskripsi.innerText = 'Tidak ada batas jatuh tempo rutin nasional pada tanggal ini. Catatan: Apabila tanggal jatuh tempo jatuh pada hari libur/akhir pekan, batas waktu bergeser ke hari kerja berikutnya.';
+        deskripsi.innerText = 'Tidak ada batas jatuh tempo rutin nasional pada tanggal ini. Catatan Coretax: Jika tanggal jatuh tempo (15, 20, akhir bulan) bertepatan dengan hari libur nasional atau akhir pekan, batas waktu bergeser ke hari kerja berikutnya.';
       }
     }
 
@@ -1404,36 +1416,28 @@ Dihitung otomatis via Kalkulator Pajak`;
 
       const items = [
         {
-          day: 10,
-          type: 'pph_potput',
-          title: 'Batas Setor PPh Pemotongan',
-          tag: 'Setor',
-          tagColor: 'bg-amber-100 text-amber-800 border-amber-200',
-          desc: 'PPh 21, PPh 23, PPh 4 ayat (2) Masa Pajak Sebelumnya'
-        },
-        {
           day: 15,
-          type: 'pph_sendiri',
-          title: 'Batas Setor PPh Sendiri',
-          tag: 'Setor',
+          type: 'pph_setor_coretax',
+          title: 'Batas Setor Seluruh PPh Masa',
+          tag: 'Setor Coretax',
           tagColor: 'bg-amber-100 text-amber-800 border-amber-200',
-          desc: 'PPh Pasal 25 Angsuran & PPh Final UMKM 0,5% (PP 55/2022)'
+          desc: 'PPh 21/26, PPh 23, PPh 4 ayat (2), PPh 25, Final UMKM via Deposit / Billing Coretax'
         },
         {
           day: 20,
-          type: 'lapor_spt',
+          type: 'pph_lapor_coretax',
           title: 'Batas Lapor SPT Masa PPh',
-          tag: 'Lapor',
+          tag: 'Lapor Coretax',
           tagColor: 'bg-blue-100 text-blue-800 border-blue-200',
-          desc: 'SPT Masa PPh Unifikasi & SPT Masa PPh 21/26'
+          desc: 'SPT Masa PPh Unifikasi & SPT Masa PPh 21/26 via Portal Coretax DJP'
         },
         {
           day: totalDays,
-          type: 'ppn_akhir',
-          title: 'Batas Setor & Lapor PPN',
-          tag: 'PPN',
+          type: 'ppn_coretax',
+          title: 'Batas Setor & Lapor SPT Masa PPN',
+          tag: 'PPN Coretax',
           tagColor: 'bg-red-100 text-red-800 border-red-200',
-          desc: 'Setor PPN Terutang & Lapor SPT Masa PPN 1111'
+          desc: 'Setor PPN Terutang & Lapor SPT Masa PPN langsung di Portal Coretax DJP'
         }
       ];
 
@@ -1470,21 +1474,18 @@ Dihitung otomatis via Kalkulator Pajak`;
       const month = kalenderBulan + 1;
       const dateStr = `${year}${month < 10 ? '0' + month : month}${day < 10 ? '0' + day : day}`;
       
-      let title = 'Batas Waktu Pajak DJP';
-      let details = 'Pengingat batas waktu penyetoran / pelaporan pajak resmi via CalculaTAX.';
+      let title = 'Batas Waktu Pajak Coretax DJP';
+      let details = 'Pengingat batas waktu penyetoran / pelaporan pajak resmi via CalculaTAX (Standar Coretax DJP PMK 81/2024).';
 
-      if (type === 'pph_potput') {
-        title = 'Batas Setor PPh 21, 23, 4(2) - CalculaTAX';
-        details = 'Batas akhir penyetoran PPh Potput masa pajak sebelumnya via kode e-Billing.';
-      } else if (type === 'pph_sendiri') {
-        title = 'Batas Setor PPh 25 & Final UMKM - CalculaTAX';
-        details = 'Batas akhir penyetoran angsuran PPh 25 dan PPh Final UMKM 0.5%.';
-      } else if (type === 'lapor_spt') {
-        title = 'Batas Lapor SPT Masa Unifikasi & PPh 21 - CalculaTAX';
-        details = 'Batas akhir pelaporan SPT Masa Unifikasi & PPh 21 masa pajak sebelumnya.';
-      } else if (type === 'ppn_akhir') {
-        title = 'Batas Akhir Setor & Lapor SPT Masa PPN - CalculaTAX';
-        details = 'Batas akhir penyetoran PPN terutang dan pelaporan SPT Masa PPN 1111.';
+      if (type === 'pph_setor_coretax') {
+        title = 'Batas Setor Seluruh PPh Masa (Coretax PMK 81/2024) - CalculaTAX';
+        details = 'Batas akhir penyetoran seluruh PPh Masa (PPh 21, 23, 4(2), 25, Final UMKM) via Akun Deposit Pajak atau Kode Billing Coretax DJP.';
+      } else if (type === 'pph_lapor_coretax') {
+        title = 'Batas Lapor SPT Masa PPh (Portal Coretax) - CalculaTAX';
+        details = 'Batas akhir pelaporan SPT Masa PPh Unifikasi dan SPT Masa PPh 21/26 via Portal Coretax DJP.';
+      } else if (type === 'ppn_coretax') {
+        title = 'Batas Akhir Setor & Lapor PPN (Portal Coretax) - CalculaTAX';
+        details = 'Batas akhir penyetoran PPN kurang bayar dan pelaporan SPT Masa PPN masa pajak sebelumnya via Portal Coretax DJP.';
       }
 
       const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${dateStr}T090000/${dateStr}T100000&details=${encodeURIComponent(details)}&add=`;
@@ -1492,7 +1493,7 @@ Dihitung otomatis via Kalkulator Pajak`;
     }
 
     function bukaGoogleCalendarBulanIni() {
-      bukaGoogleCalendarEvent('pph_potput', 10);
+      bukaGoogleCalendarEvent('pph_setor_coretax', 15);
     }
 
     function unduhSemuaPengingatKalenderIcs() {
@@ -1500,10 +1501,10 @@ Dihitung otomatis via Kalkulator Pajak`;
       let icsContent = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
-        'PRODID:-//CalculaTAX//Kalender Pajak Indonesia//ID',
+        'PRODID:-//CalculaTAX//Kalender Pajak Coretax Indonesia//ID',
         'CALSCALE:GREGORIAN',
         'METHOD:PUBLISH',
-        'X-WR-CALNAME:Jadwal Pajak DJP - CalculaTAX'
+        'X-WR-CALNAME:Jadwal Pajak Coretax DJP (PMK 81/2024) - CalculaTAX'
       ];
 
       for (let m = 1; m <= 12; m++) {
@@ -1511,21 +1512,20 @@ Dihitung otomatis via Kalkulator Pajak`;
         const totalDays = new Date(year, m, 0).getDate();
 
         const events = [
-          { day: 10, summary: 'Batas Setor PPh 21, 23, 4(2)', desc: 'Batas penyetoran PPh Potput via e-Billing.' },
-          { day: 15, summary: 'Batas Setor PPh 25 & Final UMKM', desc: 'Batas penyetoran PPh setor sendiri.' },
-          { day: 20, summary: 'Batas Lapor SPT Masa Unifikasi & 21', desc: 'Batas pelaporan SPT Masa Unifikasi via DJP Online.' },
-          { day: totalDays, summary: 'Batas Setor & Lapor SPT Masa PPN', desc: 'Batas setor & lapor SPT Masa PPN 1111.' }
+          { day: 15, summary: 'Batas Setor Seluruh PPh Masa (Coretax PMK 81/2024)', desc: 'Batas setor PPh 21, 23, 4(2), 25, Final UMKM via Deposit/Billing Coretax.' },
+          { day: 20, summary: 'Batas Lapor SPT Masa PPh (Portal Coretax)', desc: 'Batas lapor SPT Masa PPh Unifikasi & 21/26 via Portal Coretax DJP.' },
+          { day: totalDays, summary: 'Batas Setor & Lapor SPT Masa PPN (Portal Coretax)', desc: 'Batas setor PPN kurang bayar & lapor SPT Masa PPN via Portal Coretax DJP.' }
         ];
 
         events.forEach((ev, idx) => {
           const dStr = ev.day < 10 ? '0' + ev.day : ev.day;
           icsContent.push('BEGIN:VEVENT');
-          icsContent.push(`UID:tax-${year}${mStr}${dStr}-${idx}@calculatax`);
+          icsContent.push(`UID:coretax-${year}${mStr}${dStr}-${idx}@calculatax`);
           icsContent.push(`DTSTAMP:${year}0101T000000Z`);
           icsContent.push(`DTSTART;VALUE=DATE:${year}${mStr}${dStr}`);
           icsContent.push(`DTEND;VALUE=DATE:${year}${mStr}${dStr}`);
           icsContent.push(`SUMMARY:${ev.summary}`);
-          icsContent.push(`DESCRIPTION:${ev.desc} (Dihitung via CalculaTAX)`);
+          icsContent.push(`DESCRIPTION:${ev.desc} (CalculaTAX - Standar Coretax PMK 81/2024)`);
           icsContent.push('BEGIN:VALARM');
           icsContent.push('TRIGGER:-P3D');
           icsContent.push('ACTION:DISPLAY');
@@ -1545,12 +1545,12 @@ Dihitung otomatis via Kalkulator Pajak`;
       const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `Kalender-Pajak-CalculaTAX-${year}.ics`;
+      link.download = `Kalender-Pajak-Coretax-${year}.ics`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      alert('File .ICS kalender pajak berhasil diunduh! Silakan buka file tersebut di HP Anda untuk otomatis menambahkan seluruh jadwal ke Google Calendar atau Apple Calendar dengan alarm.');
+      alert('File .ICS kalender pajak Coretax berhasil diunduh! Silakan buka file tersebut di HP Anda untuk otomatis menambahkan seluruh jadwal ke Google Calendar atau Apple Calendar lengkap dengan alarm.');
     }
 
     function toggleEmailReminder(input) {
@@ -1580,39 +1580,61 @@ Dihitung otomatis via Kalkulator Pajak`;
         document.getElementById('slipSubInfo').innerText = `${data.subKategoriLabel || 'PPN'} • ${data.isInclude ? 'Include PPN' : 'Exclude PPN'}`;
         document.getElementById('slipJenisPajak').innerText = 'PPN (Pajak Pertambahan Nilai)';
         document.getElementById('slipSkema').innerText = data.isInclude ? 'Include PPN (Harga Sudah Termasuk Pajak)' : 'Exclude PPN (Harga Belum Termasuk Pajak)';
-        document.getElementById('slipTarif').innerText = `${(data.tarifEfektif * 100).toFixed(2)}% (Tarif Pokok ${(data.ppnRate * 100)}%)`;
-        document.getElementById('slipLblNpwpFaktur').innerText = 'Kode e-Faktur:';
+        
+        const tarifStr = `${(data.tarifEfektif * 100).toFixed(2)}% (Tarif Pokok ${(data.ppnRate * 100)}%)`;
+        document.getElementById('slipTarif').innerText = tarifStr;
+        document.getElementById('slipLblNpwpFaktur').innerText = 'Kode Transaksi Coretax:';
         document.getElementById('slipNpwpFaktur').innerText = `${data.kodeFaktur || '040'} (${data.dasarHukum || 'DPP Nilai Lain'})`;
 
         document.getElementById('slipLblKontrak').innerText = 'Nilai Pokok Transaksi:';
-        document.getElementById('slipValKontrak').innerText = formatRupiah(data.nilaiPokok);
-        document.getElementById('slipValDpp').innerText = formatRupiah(data.dpp);
-        document.getElementById('slipLblPajak').innerText = 'PPN Terutang:';
-        document.getElementById('slipValPajak').innerText = formatRupiah(data.pph);
-        document.getElementById('slipLblUtama').innerText = data.isInclude ? 'Kas Bersih Penjual:' : 'Total Tagihan Dibayar Pembeli:';
-        document.getElementById('slipValUtama').innerText = formatRupiah(data.isInclude ? data.netPenjual : data.totalTagihan);
-        document.getElementById('slipValBeban').innerText = formatRupiah(data.nilaiPokok);
+        document.getElementById('slipValKontrak').innerText = formatRupiah(data.nilaiPokok, 2);
+        document.getElementById('slipValDpp').innerText = formatRupiah(data.dpp, 2);
+        
+        const rowTarif = document.getElementById('slipRowTarifTabel');
+        if (rowTarif) rowTarif.classList.remove('hidden');
+        document.getElementById('slipLblTarifTabel').innerText = 'Tarif PPN Efektif:';
+        document.getElementById('slipValTarifTabel').innerText = tarifStr;
 
-        document.getElementById('slipCatatan').innerText = `Rekam DPP sebesar ${formatRupiah(data.dpp)} dengan Kode Transaksi ${data.kodeFaktur} pada aplikasi e-Faktur DJP.`;
+        document.getElementById('slipLblPajak').innerText = 'PPN Terutang:';
+        document.getElementById('slipValPajak').innerText = formatRupiah(data.pph, 2);
+        document.getElementById('slipLblUtama').innerText = data.isInclude ? 'Kas Bersih Penjual (Exclude PPN):' : 'Total Tagihan Dibayar Pembeli:';
+        document.getElementById('slipValUtama').innerText = formatRupiah(data.isInclude ? data.netPenjual : data.totalTagihan, 2);
+        
+        const lblBeban = document.getElementById('slipLblBeban');
+        if (lblBeban) lblBeban.innerText = 'Nilai Pokok Sebelum Pajak:';
+        document.getElementById('slipValBeban').innerText = formatRupiah(data.nilaiPokok, 2);
+
+        document.getElementById('slipCatatan').innerText = `Rekam Faktur Pajak dengan DPP sebesar ${formatRupiah(data.dpp, 2)} dan Kode Transaksi ${data.kodeFaktur} di Portal Coretax DJP. Setorkan PPN Kurang Bayar dan laporkan SPT Masa PPN paling lambat akhir bulan berikutnya via Portal Coretax DJP (PMK 81/2024).`;
       } else {
         document.getElementById('slipTaxCategoryTitle').innerText = `SLIP MEMO PERHITUNGAN ${data.jenis}`;
         document.getElementById('slipSubInfo').innerText = `${data.tarifDeskripsi} • ${data.isGrossUp ? 'Gross-Up' : 'Non Gross-Up'}`;
         document.getElementById('slipJenisPajak').innerText = data.jenis;
         document.getElementById('slipSkema').innerText = data.isGrossUp ? 'Gross-Up (Pajak Ditanggung Perusahaan)' : 'Non Gross-Up (Potong dari Nilai Tagihan)';
-        document.getElementById('slipTarif').innerText = data.tarifEfektifPersen || '2.00%';
+        
+        const tarifStr = data.tarifEfektifPersen || '2.00%';
+        document.getElementById('slipTarif').innerText = tarifStr;
         document.getElementById('slipLblNpwpFaktur').innerText = 'Status Transaksi:';
         document.getElementById('slipNpwpFaktur').innerText = data.isGrossUp ? 'Vendor Terima Kas Utuh' : 'Potong Tagihan Vendor';
 
-        document.getElementById('slipLblKontrak').innerText = 'Nilai Kontrak / Input:';
-        document.getElementById('slipValKontrak').innerText = formatRupiah(data.rawNominal);
-        document.getElementById('slipValDpp').innerText = formatRupiah(data.dpp);
-        document.getElementById('slipLblPajak').innerText = `Potongan ${data.jenis}:`;
-        document.getElementById('slipValPajak').innerText = formatRupiah(data.pph);
-        document.getElementById('slipLblUtama').innerText = 'Kas Ditransfer ke Vendor:';
-        document.getElementById('slipValUtama').innerText = formatRupiah(data.netVendor);
-        document.getElementById('slipValBeban').innerText = formatRupiah(data.bebanPerusahaan);
+        document.getElementById('slipLblKontrak').innerText = data.isGrossUp ? 'Nilai Kontrak (Target Kas Bersih):' : 'Nilai Kontrak / Bruto Tagihan:';
+        document.getElementById('slipValKontrak').innerText = formatRupiah(data.rawNominal, 2);
+        document.getElementById('slipValDpp').innerText = formatRupiah(data.dpp, 2);
+        
+        const rowTarif = document.getElementById('slipRowTarifTabel');
+        if (rowTarif) rowTarif.classList.remove('hidden');
+        document.getElementById('slipLblTarifTabel').innerText = 'Tarif Pajak Efektif:';
+        document.getElementById('slipValTarifTabel').innerText = tarifStr;
 
-        document.getElementById('slipCatatan').innerText = `Setorkan potongan pajak sebesar ${formatRupiah(data.pph)} via kode e-Billing dan laporkan pada SPT Masa PPh Unifikasi sebelum tanggal 20 bulan berikutnya.`;
+        document.getElementById('slipLblPajak').innerText = `Potongan ${data.jenis}:`;
+        document.getElementById('slipValPajak').innerText = formatRupiah(data.pph, 2);
+        document.getElementById('slipLblUtama').innerText = 'Kas Bersih Ditransfer ke Vendor:';
+        document.getElementById('slipValUtama').innerText = formatRupiah(data.netVendor, 2);
+        
+        const lblBeban = document.getElementById('slipLblBeban');
+        if (lblBeban) lblBeban.innerText = 'Total Beban Biaya Perusahaan:';
+        document.getElementById('slipValBeban').innerText = formatRupiah(data.bebanPerusahaan, 2);
+
+        document.getElementById('slipCatatan').innerText = `Setorkan potongan pajak sebesar ${formatRupiah(data.pph, 2)} menggunakan Akun Deposit Pajak atau Kode Billing Coretax DJP paling lambat tanggal 15 bulan berikutnya, dan laporkan pada SPT Masa via Portal Coretax DJP paling lambat tanggal 20 bulan berikutnya (PMK 81/2024).`;
       }
     }
 
@@ -1639,17 +1661,76 @@ Dihitung otomatis via Kalkulator Pajak`;
 
     function unduhSlipPdf() {
       const element = document.getElementById('printableSlipContent');
-      const filename = `Slip-Pajak-${activeSlipData ? activeSlipData.jenis : 'CalculaTAX'}-${Date.now()}.pdf`;
+      if (!element) return;
+      const filename = `Slip-Pajak-${activeSlipData ? (activeSlipData.jenis || 'Memo') : 'CalculaTAX'}-${Date.now()}.pdf`;
 
       if (typeof html2pdf !== 'undefined') {
+        // Tampilkan indikator proses unduh pada tombol
+        const btnUnduh = (typeof window !== 'undefined' && window.event ? window.event.currentTarget : null) || document.querySelector('button[onclick*="unduhSlipPdf"]');
+        let originalBtnHtml = '';
+        if (btnUnduh) {
+          originalBtnHtml = btnUnduh.innerHTML;
+          btnUnduh.disabled = true;
+          btnUnduh.innerHTML = `
+            <svg class="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+            <span class="truncate">Membuat PDF...</span>
+          `;
+        }
+
+        // Kloning elemen ke container off-screen dengan lebar fixed tanpa batasan overflow/scroll modal
+        const clone = element.cloneNode(true);
+        clone.style.width = '600px';
+        clone.style.maxWidth = '600px';
+        clone.style.margin = '0 auto';
+        clone.style.padding = '24px';
+        clone.style.boxSizing = 'border-box';
+        clone.style.borderRadius = '16px';
+        clone.style.border = '1px solid #cbd5e1';
+        clone.style.backgroundColor = '#ffffff';
+
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'fixed';
+        wrapper.style.left = '-9999px';
+        wrapper.style.top = '0';
+        wrapper.style.width = '650px';
+        wrapper.style.backgroundColor = '#ffffff';
+        wrapper.style.zIndex = '-9999';
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
+
         const opt = {
-          margin: [8, 8, 8, 8],
+          margin: [10, 10, 10, 10],
           filename: filename,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            letterRendering: true,
+            scrollY: 0,
+            scrollX: 0,
+            windowWidth: 750,
+            backgroundColor: '#ffffff'
+          },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-        html2pdf().set(opt).from(element).save();
+
+        html2pdf().set(opt).from(clone).save()
+          .then(() => {
+            if (document.body.contains(wrapper)) document.body.removeChild(wrapper);
+            if (btnUnduh) {
+              btnUnduh.disabled = false;
+              btnUnduh.innerHTML = originalBtnHtml;
+            }
+          })
+          .catch((err) => {
+            console.error('Gagal unduh PDF:', err);
+            if (document.body.contains(wrapper)) document.body.removeChild(wrapper);
+            if (btnUnduh) {
+              btnUnduh.disabled = false;
+              btnUnduh.innerHTML = originalBtnHtml;
+            }
+            window.print();
+          });
       } else {
         window.print();
       }
@@ -1660,28 +1741,34 @@ Dihitung otomatis via Kalkulator Pajak`;
       const d = activeSlipData;
       let text = '';
       if (d.isPpn) {
-        text = `*SLIP MEMO PERHITUNGAN PPN*\n` +
+        text = `*SLIP MEMO PERHITUNGAN PPN (STANDAR CORETAX)*\n` +
           `Ref: CTX-${d.id ? String(d.id).slice(-6) : 'ONLINE'}\n` +
           `Kategori: ${d.subKategoriLabel || 'PPN'}\n` +
+          `Kode Transaksi: ${d.kodeFaktur || '040'} (${d.dasarHukum || 'DPP Nilai Lain'})\n` +
           `---------------------------------\n` +
-          `• Nilai Pokok: ${formatRupiah(d.nilaiPokok)}\n` +
-          `• DPP: ${formatRupiah(d.dpp)}\n` +
-          `• PPN Terutang: ${formatRupiah(d.pph)}\n` +
-          `• *Total Tagihan:* ${formatRupiah(d.isInclude ? d.netPenjual : d.totalTagihan)}\n` +
+          `• Nilai Pokok Transaksi: ${formatRupiah(d.nilaiPokok, 2)}\n` +
+          `• DPP Nilai Lain: ${formatRupiah(d.dpp, 2)}\n` +
+          `• Tarif PPN: ${(d.tarifEfektif * 100).toFixed(2)}%\n` +
+          `• PPN Terutang: ${formatRupiah(d.pph, 2)}\n` +
+          `• *${d.isInclude ? 'Kas Bersih Penjual:' : 'Total Tagihan Dibayar:'}* ${formatRupiah(d.isInclude ? d.netPenjual : d.totalTagihan, 2)}\n` +
           `---------------------------------\n` +
-          `Dihitung otomatis via CalculaTAX`;
+          `Setor & lapor via Portal Coretax DJP paling lambat akhir bulan berikutnya (PMK 81/2024).\n` +
+          `_Dihitung otomatis via CalculaTAX PWA_`;
       } else {
-        text = `*SLIP MEMO PERHITUNGAN ${d.jenis}*\n` +
+        text = `*SLIP MEMO PERHITUNGAN ${d.jenis} (STANDAR CORETAX)*\n` +
           `Ref: CTX-${d.id ? String(d.id).slice(-6) : 'ONLINE'}\n` +
           `Skema: ${d.isGrossUp ? 'Gross-Up' : 'Non Gross-Up'} (${d.tarifDeskripsi})\n` +
           `---------------------------------\n` +
-          `• Nilai Kontrak: ${formatRupiah(d.rawNominal)}\n` +
-          `• DPP: ${formatRupiah(d.dpp)}\n` +
-          `• Potongan Pajak: ${formatRupiah(d.pph)}\n` +
-          `• *Kas Transfer Vendor:* ${formatRupiah(d.netVendor)}\n` +
-          `• Total Beban Perusahaan: ${formatRupiah(d.bebanPerusahaan)}\n` +
+          `• Nilai Kontrak / Input: ${formatRupiah(d.rawNominal, 2)}\n` +
+          `• DPP (Dasar Pengenaan Pajak): ${formatRupiah(d.dpp, 2)}\n` +
+          `• Tarif Efektif: ${d.tarifEfektifPersen || '2.00%'}\n` +
+          `• Potongan Pajak ${d.jenis}: ${formatRupiah(d.pph, 2)}\n` +
+          `• *Kas Ditransfer ke Vendor:* ${formatRupiah(d.netVendor, 2)}\n` +
+          `• Total Beban Perusahaan: ${formatRupiah(d.bebanPerusahaan, 2)}\n` +
           `---------------------------------\n` +
-          `Dihitung otomatis via CalculaTAX`;
+          `Batas Setor: Tgl 15 via Akun Deposit/Billing Coretax\n` +
+          `Batas Lapor: Tgl 20 via Portal Coretax DJP (PMK 81/2024)\n` +
+          `_Dihitung otomatis via CalculaTAX PWA_`;
       }
 
       window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
